@@ -1,0 +1,232 @@
+{
+ "label": "Cycle 1 · Semaine 1 — Fondation (début 20/07)",
+ "week": 1,
+ "workouts": {
+  "run": {
+   "label": "🏃 Course facile — Zone 1-2",
+   "dur": "25 min",
+   "xpSkill": "endur",
+   "meta": "Allure conversation. Marche autorisée sans culpabilité. Genou : au moindre signal, on marche.",
+   "exos": [
+    {
+     "n": "Course 25 min Z1-Z2",
+     "g": "Course à pied",
+     "t": "25 min",
+     "tip": "Échauffement 5 min marche rapide. FC cible < 145. Le but : terminer frais.",
+     "type": "run",
+     "repsN": 25
+    }
+   ],
+   "mvw": "Marche rapide 15 min"
+  },
+  "cali_a": {
+   "label": "💪 Cali A — Push focus",
+   "dur": "45 min max",
+   "xpSkill": "force",
+   "meta": "Échauffement 8 min : rotations épaules ×20, band pull-apart ×15, pompes murales ×10, squats ×10. Étirements fin : 5 min (pecs, triceps, pike).",
+   "exos": [
+    {
+     "n": "Pompes inclinées",
+     "g": "Pompes inclinées",
+     "t": "3×6",
+     "tip": "Surface hauteur hanches. Tempo 2-1-2. En réserve sur chaque série.",
+     "sets": 3,
+     "repsN": 6,
+     "type": "push"
+    },
+    {
+     "n": "Pompes au sol",
+     "g": "Pompes",
+     "t": "3×3",
+     "tip": "Max actuel 5 — on reste à 3 propres. Forme parfaite uniquement.",
+     "sets": 3,
+     "repsN": 3,
+     "type": "push"
+    },
+    {
+     "n": "Rowing élastique",
+     "g": "Rowing avec élastique",
+     "t": "3×12",
+     "tip": "SW moyen (15 kg). Omoplates serrées 1s en fin de tirage.",
+     "sets": 3,
+     "repsN": 12,
+     "type": "pull"
+    },
+    {
+     "n": "Face pulls",
+     "g": "Traction de face avec élastique",
+     "t": "2×15",
+     "tip": "SW léger. Coudes hauts — hygiène d’épaule.",
+     "sets": 2,
+     "repsN": 15,
+     "type": "pull"
+    },
+    {
+     "n": "Planche",
+     "g": "Planche",
+     "t": "3×30s",
+     "tip": "Gainage strict, fessiers serrés. Arrêt dès que ça tremble trop.",
+     "sets": 3,
+     "repsN": 30,
+     "type": "core"
+    }
+   ],
+   "mvw": "2 tours : 5 pompes incl + 10 rowing + 20s planche"
+  },
+  "rest": {
+   "label": "😴 Repos",
+   "dur": "",
+   "xpSkill": null,
+   "meta": "Récupération complète. Marche légère ok.",
+   "exos": [],
+   "mvw": null,
+   "isRest": true
+  },
+  "cali_b": {
+   "label": "💪 Cali B — Pull focus",
+   "dur": "45 min max",
+   "xpSkill": "force",
+   "meta": "Échauffement 8 min : rotations externes élastique ×15, scapular push-ups ×8, band pull-apart ×15. Étirements fin : 5 min (dorsaux, biceps, child pose).",
+   "exos": [
+    {
+     "n": "Rowing élastique",
+     "g": "Rowing avec élastique",
+     "t": "3×12",
+     "tip": "SW moyen. Focus contraction dorsale.",
+     "sets": 3,
+     "repsN": 12,
+     "type": "pull"
+    },
+    {
+     "n": "Lat pulls élastique",
+     "g": "Pull-down avec élastique",
+     "t": "3×10",
+     "tip": "SW léger-moyen. Grands dorsaux — tirer vers la poitrine.",
+     "sets": 3,
+     "repsN": 10,
+     "type": "pull"
+    },
+    {
+     "n": "Pompes inclinées",
+     "g": "Pompes inclinées",
+     "t": "2×8",
+     "tip": "Équilibrage push. Tempo contrôlé.",
+     "sets": 2,
+     "repsN": 8,
+     "type": "push"
+    },
+    {
+     "n": "Band pull-apart",
+     "g": "Pull-Apart avec élastique",
+     "t": "2×15",
+     "tip": "SW léger. Posture + coiffe des rotateurs.",
+     "sets": 2,
+     "repsN": 15,
+     "type": "pull"
+    },
+    {
+     "n": "Planche latérale",
+     "g": "Planche latérale",
+     "t": "2×20s/côté",
+     "tip": "Core latéral. Hanches hautes.",
+     "sets": 2,
+     "repsN": 20,
+     "type": "core"
+    }
+   ],
+   "mvw": "2 tours : 10 rowing + 10 pull-apart + 15s planche latérale/côté"
+  },
+  "run2": {
+   "label": "🏃 Course facile — Zone 1-2",
+   "dur": "25-30 min",
+   "xpSkill": "endur",
+   "meta": "Même consigne que lundi. Si lundi s’est bien passé : 30 min. Sinon : 25.",
+   "exos": [
+    {
+     "n": "Course 25-30 min Z1-Z2",
+     "g": "Course à pied",
+     "t": "25-30 min",
+     "tip": "Toujours en aisance respiratoire. Le volume viendra plus tard.",
+     "type": "run",
+     "repsN": 28
+    }
+   ],
+   "mvw": "Marche rapide 15 min"
+  },
+  "cali_c": {
+   "label": "💪 Cali C — Full body",
+   "dur": "45 min max",
+   "xpSkill": "force",
+   "meta": "Échauffement 8 min : jumping jacks ×30, squats ×10, rotations épaules. Étirements fin : 5 min complet.",
+   "exos": [
+    {
+     "n": "Squats",
+     "g": "Squat",
+     "t": "3×12",
+     "tip": "Tempo 2-1-2. Genou aligné — zéro douleur tolérée.",
+     "sets": 3,
+     "repsN": 12,
+     "type": "legs"
+    },
+    {
+     "n": "Pompes inclinées",
+     "g": "Pompes inclinées",
+     "t": "2×8",
+     "tip": "Push horizontal.",
+     "sets": 2,
+     "repsN": 8,
+     "type": "push"
+    },
+    {
+     "n": "Rowing élastique",
+     "g": "Rowing avec élastique",
+     "t": "2×12",
+     "tip": "Pull équilibrage.",
+     "sets": 2,
+     "repsN": 12,
+     "type": "pull"
+    },
+    {
+     "n": "Fentes",
+     "g": "Fente",
+     "t": "2×8/jambe",
+     "tip": "Genou avant dans l’axe. Amplitude confortable.",
+     "sets": 2,
+     "repsN": 8,
+     "type": "legs"
+    },
+    {
+     "n": "Planche",
+     "g": "Planche",
+     "t": "3×30s",
+     "tip": "Même consigne que mardi.",
+     "sets": 3,
+     "repsN": 30,
+     "type": "core"
+    },
+    {
+     "n": "Superman",
+     "g": "Superman",
+     "t": "2×12",
+     "tip": "Core postérieur — lombaires. Montée lente 2s.",
+     "sets": 2,
+     "repsN": 12,
+     "type": "core"
+    }
+   ],
+   "mvw": "2 tours : 8 squats + 5 pompes incl + 20s planche"
+  },
+  "rest_batch": {
+   "label": "🍱 Repos + Batch cooking",
+   "dur": "",
+   "xpSkill": null,
+   "isRest": true,
+   "meta": "Pesée officielle à jeun. Génération du bilan. Batch cooking pour les midis.",
+   "exos": [],
+   "batch": "<b>Idées batch cooking S1 :</b><br>• <b>Bowl poulet-quinoa</b> : 600g poulet rôti + quinoa + brocolis + sauce yaourt-citron (4 portions, ~35g prot/portion)<br>• <b>Chili sin carne enrichi</b> : haricots rouges + lentilles + tofu ferme émietté + riz complet (4 portions, ~30g prot)<br>• <b>Boulettes dinde-avoine</b> + patates douces rôties + haricots verts (5 portions, ~38g prot)",
+   "mvw": null
+  }
+ },
+ "cycleWeek": 1,
+ "cycleStart": "20260720"
+}
