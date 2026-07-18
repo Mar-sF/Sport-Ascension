@@ -566,8 +566,24 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 <div class="footer" id="footerV"></div>
 
 <script>
+// Shim stockage : fallback mémoire si localStorage inaccessible (sandbox/preview)
+try{ localStorage.getItem('t'); }catch(e){
+  (function(){
+    var mem={};
+    window.localStorage = {
+      getItem:function(k){return mem.hasOwnProperty(k)?mem[k]:null;},
+      setItem:function(k,v){mem[k]=String(v);},
+      removeItem:function(k){delete mem[k];},
+      key:function(i){return Object.keys(mem)[i]||null;},
+      clear:function(){mem={};},
+      get length(){return Object.keys(mem).length;}
+    };
+  })();
+}
+</script>
+<script>
 // ══════════ CONFIG ══════════
-var APP_VERSION = 'v3.0';
+var APP_VERSION = 'v3.1';
 var KEY_PREFIX = 'sa_';
 var SKILLS = [
   {id:'force', name:'Force',      icon:'\ud83d\udcaa', color:'#f87171', cls:'sk-force'},
@@ -755,7 +771,7 @@ function showTab(id){
 function renderHeader(){
   var gl = globalLevel();
   document.getElementById('hdLvl').textContent = gl;
-  document.getElementById('hdSub').textContent = 'Personnage niveau '+gl;
+  document.getElementById('hdSub').textContent = 'Personnage niveau '+gl+' \u00b7 '+APP_VERSION;
   // XP bar globale : progression du level de la skill la moins avancée vers son prochain palier ? Simple : moyenne des progressions
   var x = getXp(), tot=0;
   ['force','endur','core','disc'].forEach(function(s){
