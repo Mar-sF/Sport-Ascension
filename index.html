@@ -265,9 +265,9 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 /* Modal ajout */
 .nut-modal{position:fixed;inset:0;background:rgba(6,5,12,.85);backdrop-filter:blur(6px);z-index:9500;display:none;align-items:flex-end;justify-content:center}
 .nut-modal.show{display:flex}
-.nut-modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:82vh;overflow-y:auto;padding:16px;box-shadow:0 -8px 40px rgba(0,0,0,.6)}
-.nut-modal-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center}
-.nut-close{margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--muted2);font-size:14px}
+.nut-modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:76vh;max-height:82dvh;overflow-y:auto;padding:16px;box-shadow:0 -8px 40px rgba(0,0,0,.6);overscroll-behavior:contain}
+.nut-modal-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase;display:flex;align-items:center;position:sticky;top:-16px;background:var(--bg2);z-index:6;margin:-16px -16px 10px;padding:14px 16px;border-bottom:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.nut-close{margin-left:auto;width:38px;height:38px;min-width:38px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:16px;display:flex;align-items:center;justify-content:center}
 .qty-row{display:flex;gap:8px;align-items:center;margin-top:10px}
 .qty-in{width:92px;min-height:44px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Space Mono',monospace;font-size:16px;text-align:center;font-weight:700}
 .nut-prev{background:rgba(28,25,48,.8);border:1px solid var(--border);border-radius:9px;padding:9px 11px;margin-top:9px;font-size:10.5px;color:var(--muted2);font-family:'Space Mono',monospace}
@@ -286,6 +286,29 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 .scan-status-text{color:rgba(255,255,255,.8);font-size:.8rem;text-align:center;font-family:'Space Mono',monospace;margin-bottom:12px;min-height:20px}
 .scan-manual-btn{display:block;width:100%;padding:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;color:#fff;font-size:.88rem;font-weight:600;text-align:center;cursor:pointer}
 .scan-manual-btn:active{background:rgba(255,255,255,.25)}
+
+
+/* ═══ GRIMOIRE ═══ */
+.grim-card{display:flex;align-items:center;gap:11px;background:linear-gradient(180deg,var(--bg2),rgba(20,18,33,.85));border:1px solid var(--border);border-radius:11px;padding:10px 13px;margin-bottom:7px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.grim-card:active{transform:scale(.985)}
+.grim-ic{width:44px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.grim-name{font-size:12px;font-weight:700;flex:1}
+.grim-muscles{font-size:9px;color:var(--muted2);margin-top:2px}
+.grim-cat{font-size:8px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.4px;text-transform:uppercase;flex-shrink:0}
+.gc-push{background:rgba(248,113,113,.13);color:var(--red)}
+.gc-pull{background:rgba(96,165,250,.13);color:var(--blue)}
+.gc-core{background:rgba(74,222,128,.13);color:var(--green)}
+.gc-legs{background:rgba(34,211,238,.13);color:var(--cyan)}
+.gc-cardio{background:rgba(251,146,60,.13);color:var(--orange)}
+.fiche-svg{background:rgba(28,25,48,.6);border:1px solid var(--border);border-radius:11px;padding:8px;margin:10px 0}
+.fiche-sec{font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold2);margin:13px 0 6px}
+.fiche-step{display:flex;gap:9px;margin-bottom:7px;font-size:11.5px;line-height:1.5}
+.fiche-step-n{font-family:'Cinzel',serif;font-weight:700;color:var(--gold);flex-shrink:0;width:14px}
+.fiche-err{display:flex;gap:7px;margin-bottom:6px;font-size:11px;line-height:1.45;color:var(--muted2)}
+.fiche-key{display:flex;gap:7px;margin-bottom:6px;font-size:11px;line-height:1.45}
+.fiche-prog{display:flex;gap:8px;margin-top:4px}
+.fiche-prog>div{flex:1;background:rgba(28,25,48,.7);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:10px;line-height:1.4}
+.exo-link{text-decoration:underline;text-decoration-color:rgba(227,194,107,.4);text-underline-offset:2px;cursor:pointer}
 
 </style>
 
@@ -311,6 +334,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <button class="tab active" data-t="dash" onclick="showTab('dash')">🏰 Personnage</button>
   <button class="tab" data-t="week" onclick="showTab('week')">⚔️ Quêtes</button>
   <button class="tab" data-t="skills" onclick="showTab('skills')">🎖️ Compétences</button>
+  <button class="tab" data-t="grim" onclick="showTab('grim')">📖 Grimoire</button>
   <button class="tab" data-t="nutri" onclick="showTab('nutri')">🍎 Nutrition</button>
   <button class="tab" data-t="base" onclick="showTab('base')">🥦 Aliments</button>
   <button class="tab" data-t="stats" onclick="showTab('stats')">📈 Stats</button>
@@ -362,6 +386,26 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <div id="bossEndur"></div>
 </div>
 
+
+<!-- ═══ GRIMOIRE ═══ -->
+<div id="tab-grim" class="panel">
+  <input class="food-search" id="grimSearch" placeholder="🔍 Rechercher une technique..." oninput="renderGrimoire()">
+  <div class="cat-chips" id="grimCats">
+    <button class="cat-c on" data-c="" onclick="grimFCat('')">Toutes</button>
+    <button class="cat-c" data-c="push" onclick="grimFCat('push')">Push</button>
+    <button class="cat-c" data-c="pull" onclick="grimFCat('pull')">Pull</button>
+    <button class="cat-c" data-c="core" onclick="grimFCat('core')">Core</button>
+    <button class="cat-c" data-c="legs" onclick="grimFCat('legs')">Jambes</button>
+    <button class="cat-c" data-c="cardio" onclick="grimFCat('cardio')">Cardio</button>
+  </div>
+  <div style="font-size:10px;color:var(--muted2);margin-bottom:8px" id="grimCount"></div>
+  <div id="grimList"></div>
+</div>
+
+<!-- MODAL FICHE TECHNIQUE -->
+<div class="nut-modal" id="grimModal" onclick="if(event.target===this)closeFiche()">
+  <div class="nut-modal-box" id="grimFiche"></div>
+</div>
 
 <!-- ═══ NUTRITION ═══ -->
 <div id="tab-nutri" class="panel">
@@ -416,7 +460,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 </div>
 
 <!-- MODAL AJOUT ALIMENT -->
-<div class="nut-modal" id="nutModal">
+<div class="nut-modal" id="nutModal" onclick="if(event.target===this)nutCloseModal()">
   <div class="nut-modal-box">
     <div class="nut-modal-title"><span id="nutModalTitle">Ajouter un aliment</span><button class="nut-close" onclick="nutCloseModal()">✕</button></div>
     <input class="food-search" id="nutModalSearch" placeholder="🔍 Rechercher..." oninput="nutModalList()">
@@ -430,7 +474,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
         <button class="mini-btn" onclick="document.getElementById('nutQty').value=100;nutPrev()">100g</button>
       </div>
       <div class="nut-prev" id="nutPrevBox"></div>
-      <button class="btn btn-gold" style="margin-top:10px;width:100%" onclick="nutConfirm()">Ajouter au repas</button>
+      <button class="btn btn-gold" style="margin-top:10px;width:100%" id="nutConfirmBtn" onclick="nutConfirm()">Ajouter au repas</button>
     </div>
   </div>
 </div>
@@ -467,6 +511,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
     <button class="btn btn-gold" onclick="genBilan()">📜 Générer le bilan</button>
     <button class="btn btn-out" onclick="copyBilan()" id="copyBtn" style="display:none">📋 Copier</button>
+      <button class="btn btn-gold" id="shareBtn" style="display:none" onclick="shareBilan()">📤 Partager</button>
   </div>
   <div class="bilan-txt" id="bilanOut" style="display:none"></div>
 
@@ -522,7 +567,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 
 <script>
 // ══════════ CONFIG ══════════
-var APP_VERSION = 'v2.1';
+var APP_VERSION = 'v2.9';
 var KEY_PREFIX = 'sa_';
 var SKILLS = [
   {id:'force', name:'Force',      icon:'\ud83d\udcaa', color:'#f87171', cls:'sk-force'},
@@ -679,6 +724,7 @@ function globalLevel(){
 }
 function grantXp(skill, amount, silent){
   if(!skill || !amount) return;
+  try{var st=getStore();st.xpWeek=(st.xpWeek||0)+amount;saveStore(st);}catch(e){}
   var x = getXp();
   var before = levelFromXp(x[skill]);
   x[skill] += amount;
@@ -698,6 +744,7 @@ function showTab(id){
   if(id==='week'){ renderWeek(); }
   if(id==='skills'){ renderSkills(); }
   if(id==='bilan'){ renderJournal(); }
+  if(id==='grim'){ renderGrimoire(); }
   if(id==='nutri'){ renderNutri(); }
   if(id==='base'){ renderBase(); }
   if(id==='stats'){ setTimeout(function(){renderStats();renderScopeKpis();renderMuscles();renderNutriStats();}, 40); }
@@ -732,7 +779,7 @@ function renderDash(){
   if(idx>=0){
     var wOffSave=weekOff; weekOff=0;
     var s=getStore(); weekOff=wOffSave;
-    var day=s.days[idx], wo=WORKOUTS[day.type];
+    var day=s.days[idx], wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
     var isDone=['yes','mvw','no','rest'].includes(day.done);
     var doneL={yes:'\u2713 Qu\u00eate accomplie',mvw:'\u26a1 MVW fait \u2014 streak ok',no:'\u2717 Skipp\u00e9e',rest:'\ud83d\ude34 Repos'};
     var icon=wo.isRest?'\ud83c\udf71':(day.type.indexOf('run')===0?'\ud83c\udfc3':'\u2694\ufe0f');
@@ -769,7 +816,7 @@ function renderDash(){
   var s0=getStore(); weekOff=wOffSave2;
   var done=s0.days.filter(function(d){return d.done==='yes';}).length;
   var mvw=s0.days.filter(function(d){return d.done==='mvw';}).length;
-  var total=s0.days.filter(function(d){return !WORKOUTS[d.type].isRest;}).length;
+  var total=s0.days.filter(function(d){return !(WORKOUTS[d.type]||{}).isRest;}).length;
   var streak=calcStreak();
   document.getElementById('weekSummary').innerHTML=
     '<div class="stat-line"><span>Qu\u00eates accomplies</span><b style="color:var(--green)">'+done+(mvw?' +'+mvw+' MVW':'')+' / '+total+'</b></div>'
@@ -795,7 +842,7 @@ function calcStreak(){
       var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
       s.days.forEach(function(d,di){
         var dt=new Date(mon);dt.setDate(mon.getDate()+di);dt.setHours(0,0,0,0);
-        all.push({t:dt.getTime(),ok:['yes','mvw','rest'].includes(d.done)||WORKOUTS[d.type].isRest&&d.done!=='no'});
+        all.push({t:dt.getTime(),ok:['yes','mvw','rest'].includes(d.done)||((WORKOUTS[d.type]||{}).isRest&&d.done!=='no')});
       });
     }catch(e){}
   }
@@ -847,7 +894,7 @@ function renderWeek(){
   var stL={yes:'\u2713 Fait',mvw:'\u26a1 MVW',no:'\u2717 Skip',rest:'\ud83d\ude34 Repos','':'Planifi\u00e9e'};
   var stC={yes:'st-yes',mvw:'st-mvw',no:'st-no',rest:'st-rest','':'st-planned'};
   document.getElementById('daysList').innerHTML = s.days.map(function(day,i){
-    var wo=WORKOUTS[day.type];
+    var wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
     var isToday=dates[i].toDateString()===todayStr;
     var isPast=dates[i]<today&&!isToday;
     var compact=isPast&&['yes','mvw','no','rest'].includes(day.done);
@@ -866,7 +913,7 @@ function renderWeek(){
   }).join('');
   // restore inputs values
   s.days.forEach(function(day,i){
-    var wo=WORKOUTS[day.type];
+    var wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
     (wo.exos||[]).forEach(function(e,ei){
       var n=e.sets||1;
       for(var si=0;si<n;si++){
@@ -887,7 +934,7 @@ function renderWeek(){
 }
 
 function fillProgress(day){
-  var wo=WORKOUTS[day.type];
+  var wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
   if(!wo.exos||!wo.exos.length||wo.isRest)return null;
   var exp=0,fil=0;
   wo.exos.forEach(function(e){
@@ -944,7 +991,7 @@ function dayBody(day,i,wo){
     if(e.c&&e.c!==lastC){h+='<div class="circuit-title" style="margin-top:12px">'+e.c.toUpperCase()+'</div>';lastC=e.c;num=0;}
     num++;
     h+='<div class="prog-exo"><div class="prog-num">'+num+'</div><div>'
-      +'<div class="prog-exo-name">'+e.n+'</div>'
+      +'<div class="prog-exo-name exo-link" onclick="ficheByName(\''+e.n.replace(/'/g,"\\'")+'\')">'+e.n+' <span style="font-size:9px;opacity:.6">\ud83d\udcd6</span></div>'
       +'<div class="prog-exo-garmin">\ud83d\udcf1 '+e.g+'</div>'
       +'<div class="prog-exo-target">Cible : '+e.t+'</div>'
       +(e.tip?'<div class="prog-exo-tip">\ud83d\udca1 '+e.tip+'</div>':'')
@@ -1051,7 +1098,7 @@ function toggleZone(i,z){
 // ══════════ SAISIE ══════════
 function saveSet(i,ei,si,val){
   var s=getStore();
-  var e=WORKOUTS[s.days[i].type].exos[ei];
+  var e=(WORKOUTS[s.days[i].type]||{exos:[]}).exos[ei];if(!e)return;
   if(!s.days[i].sets[e.n])s.days[i].sets[e.n]=[];
   s.days[i].sets[e.n][si]=val===''?'':+val;
   saveStore(s);
@@ -1074,7 +1121,7 @@ function saveField(i,f,val){
   var s=getStore(); s.days[i][f]=val; saveStore(s);
 }
 function fillTarget(i,ei){
-  var s=getStore(); var e=WORKOUTS[s.days[i].type].exos[ei];
+  var s=getStore(); var e=(WORKOUTS[s.days[i].type]||{exos:[]}).exos[ei];if(!e)return;
   for(var si=0;si<e.sets;si++){
     var inp=document.getElementById('in-'+i+'-'+ei+'-'+si);
     if(inp){inp.value=e.repsN;inp.classList.add('has-val');}
@@ -1083,7 +1130,7 @@ function fillTarget(i,ei){
   toast('\u2713 Cible remplie');
 }
 function fillLast(i,ei){
-  var s=getStore(); var e=WORKOUTS[s.days[i].type].exos[ei];
+  var s=getStore(); var e=(WORKOUTS[s.days[i].type]||{exos:[]}).exos[ei];if(!e)return;
   var curKey=parseInt(getKey(weekOff),10);
   var weeks=[];
   for(var j=0;j<localStorage.length;j++){
@@ -1127,7 +1174,7 @@ var ELASTIC_BANDS = [
 ];
 function buildElasticChips(i,ei,day){
   var d=day||getStore().days[i];
-  var exoName=WORKOUTS[d.type].exos[ei].n;
+  var exoName=((WORKOUTS[d.type]||{exos:[]}).exos[ei]||{}).n||'';
   var sel=(d.elastic||{})[exoName]||'';
   var h='<div style="font-size:8.5px;color:var(--muted2);letter-spacing:.5px;text-transform:uppercase;font-weight:800;margin:9px 0 5px">\u00c9lastique</div><div style="display:flex;gap:5px;flex-wrap:wrap">';
   var lastBrand='';
@@ -1145,7 +1192,7 @@ function buildElasticChips(i,ei,day){
 }
 function pickElastic(i,ei,band){
   var s=getStore();
-  var exoName=WORKOUTS[s.days[i].type].exos[ei].n;
+  var exoName=((WORKOUTS[s.days[i].type]||{exos:[]}).exos[ei]||{}).n||'';
   if(!s.days[i].elastic)s.days[i].elastic={};
   s.days[i].elastic[exoName] = s.days[i].elastic[exoName]===band ? '' : band;
   saveStore(s);
@@ -1167,7 +1214,7 @@ function toggleChrono(i,ei){
     btn.style.background='';
     // Remplir la première série vide
     var s=getStore();
-    var e=WORKOUTS[s.days[i].type].exos[ei];
+    var e=(WORKOUTS[s.days[i].type]||{exos:[]}).exos[ei];if(!e)return;
     for(var si=0;si<e.sets;si++){
       var inp=document.getElementById('in-'+i+'-'+ei+'-'+si);
       if(inp&&!inp.value){
@@ -1192,7 +1239,7 @@ function toggleChrono(i,ei){
 // ══════════ MOYENNE PAR EXO ══════════
 function updateAvg(i,ei){
   var s=getStore();
-  var e=WORKOUTS[s.days[i].type].exos[ei];
+  var e=(WORKOUTS[s.days[i].type]||{exos:[]}).exos[ei];if(!e)return;
   var el=document.getElementById('avg-'+i+'-'+ei);
   if(!el||!e)return;
   var vals=(s.days[i].sets[e.n]||[]).map(Number).filter(function(v){return v>0;});
@@ -1207,7 +1254,7 @@ function setDone(i,val){
   var day=s.days[i];
   var prev=day.done;
   day.done = day.done===val ? '' : val;
-  var wo=WORKOUTS[day.type];
+  var wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
   if(!day.woLabel&&wo)day.woLabel=wo.label;
   // XP : accordée une seule fois, à la première validation yes/mvw
   if(['yes','mvw'].includes(day.done)&&!day.xpGranted){
@@ -1344,7 +1391,7 @@ function genBilan(){
   var skip=s.days.filter(function(d){return d.done==='no';}).length;
   t+='\ud83d\udcc5 QU\u00caTES : '+done+' faites / '+mvw+' MVW / '+skip+' skipp\u00e9es\n\n';
   s.days.forEach(function(d,i){
-    var wo=WORKOUTS[d.type];
+    var wo=WORKOUTS[d.type]||{label:d.woLabel||d.type,exos:[],isRest:true};
     var stL={yes:'\u2713 FAIT',mvw:'\u26a1 MVW',no:'\u2717 SKIP',rest:'\ud83d\ude34 REPOS','':'\u2014 non saisi'};
     t+=DAY_NAMES[i].toUpperCase()+' '+fmtD(dates[i])+' \u2014 '+wo.label+'\n';
     t+='Statut : '+stL[d.done]+(d.fc?' | FC repos : '+d.fc+' bpm':'')+'\n';
@@ -1385,6 +1432,13 @@ function genBilan(){
   var out=document.getElementById('bilanOut');
   out.textContent=t; out.style.display='block';
   document.getElementById('copyBtn').style.display='inline-flex';
+  if(navigator.share)document.getElementById('shareBtn').style.display='inline-flex';
+}
+function shareBilan(){
+  var t=document.getElementById('bilanOut').textContent;
+  if(navigator.share){
+    navigator.share({title:'Bilan Sport Ascension',text:t}).catch(function(){});
+  } else { copyBilan(); }
 }
 function copyBilan(){
   var t=document.getElementById('bilanOut').textContent;
@@ -1580,7 +1634,7 @@ function getWeekStats(){
         if(d.run&&+d.run.dur){runTot+=+d.run.dur;if(+d.run.dur>runMax)runMax=+d.run.dur;}
       });
       var y=Math.floor(dn/10000),mo=Math.floor(dn/100)%100,da=dn%100;
-      weeks.push({key:dn,lbl:pd(da)+'/'+pd(mo),poids:parseFloat(s.poids)||null,
+      weeks.push({key:dn,lbl:pd(da)+'/'+pd(mo),xp:s.xpWeek||0,poids:parseFloat(s.poids)||null,
         pompes:pompes||null,planche:planche||null,runMax:runMax||null,runTot:runTot||null,
         done:done,mvw:mvw,fcAvg:fcs.length?Math.round(fcs.reduce(function(a,b){return a+b;},0)/fcs.length):null});
     }catch(e){}
@@ -1636,9 +1690,9 @@ function renderStats(){
   var fc=getDailyFc();
   if(fc.length)mkLine('cFc',fc.map(function(x){return x.lbl;}),fc.map(function(x){return x.v;}),'#fb923c',{min:45,max:85,refLine:65});
   // Tableau
-  var rows='<tr><th>Semaine</th><th>Poids</th><th>Pompes</th><th>Planche</th><th>Course</th><th>Qu\u00eates</th><th>FC moy</th></tr>';
+  var rows='<tr><th>Semaine</th><th>Poids</th><th>Pompes</th><th>Planche</th><th>Course</th><th>Qu\u00eates</th><th>\u26a1XP</th><th>FC moy</th></tr>';
   w.slice().reverse().forEach(function(x){
-    rows+='<tr><td>'+x.lbl+'</td><td>'+(x.poids!=null?x.poids+'kg':'\u2014')+'</td><td>'+(x.pompes||'\u2014')+'</td><td>'+(x.planche?x.planche+'s':'\u2014')+'</td><td>'+(x.runMax?x.runMax+'min':'\u2014')+'</td><td>'+x.done+(x.mvw?'+'+x.mvw:'')+'</td><td>'+(x.fcAvg?x.fcAvg+'bpm':'\u2014')+'</td></tr>';
+    rows+='<tr><td>'+x.lbl+'</td><td>'+(x.poids!=null?x.poids+'kg':'\u2014')+'</td><td>'+(x.pompes||'\u2014')+'</td><td>'+(x.planche?x.planche+'s':'\u2014')+'</td><td>'+(x.runMax?x.runMax+'min':'\u2014')+'</td><td>'+x.done+(x.mvw?'+'+x.mvw:'')+'</td><td style="color:var(--xp)">'+(x.xp||'\u2014')+'</td><td>'+(x.fcAvg?x.fcAvg+'bpm':'\u2014')+'</td></tr>';
   });
   document.getElementById('histTable').innerHTML=rows;
 }
@@ -1695,9 +1749,12 @@ function getScopeDays(){
 function renderScopeKpis(){
   var el=document.getElementById('scopeKpis'); if(!el)return;
   var days=getScopeDays();
-  var done=0,mvw=0,skip=0,runMin=0,runKm=0,series=0;
+  var done=0,mvw=0,skip=0,runMin=0,runKm=0,series=0,xpTot=0;
   var poidsList=[];
-  var seenWeeks={};
+  var seenWeeks={};var seenXp={};
+  getScopeWeekKeys().forEach(function(dn){
+    try{var st=JSON.parse(localStorage.getItem(KEY_PREFIX+dn)||'null');if(st&&st.xpWeek&&!seenXp[dn]){xpTot+=st.xpWeek;seenXp[dn]=1;}}catch(e){}
+  });
   days.forEach(function(o){
     var d=o.day;
     if(d.done==='yes')done++;
@@ -1716,6 +1773,7 @@ function renderScopeKpis(){
     kpi('Qu\u00eates accomplies',done+(mvw?' + '+mvw+' MVW':'')+(skip?' \u00b7 '+skip+' skip':''),'var(--green)')
     +kpi('Course',runMin?runMin+' min'+(runKm?' \u00b7 '+Math.round(runKm*10)/10+' km':''):'\u2014','var(--blue)')
     +kpi('S\u00e9ries saisies',series||'\u2014','var(--red)')
+    +kpi('\u26a1 XP gagn\u00e9e',xpTot||'\u2014','var(--xp)')
     +kpi('Poids',deltaP!=null?(deltaP>0?'+':'')+deltaP+' kg sur la p\u00e9riode':(poidsList.length?poidsList[poidsList.length-1].p+' kg':'\u2014'),'var(--cyan)')
     +(function(){var a=typeof nutScopeAvg==='function'?nutScopeAvg():null;
       return a?kpi('Nutrition (moy/j)',a.kcal+' kcal \u00b7 '+a.prot+'g prot \u00b7 '+a.n+' j saisis','var(--gold)'):'';})();
@@ -1738,7 +1796,7 @@ function calcMuscles(){
     // Semaine : programme planifi\u00e9 (0.7) + statuts + s\u00e9ries saisies
     var s=getStore();
     s.days.forEach(function(d){
-      var wo=WORKOUTS[d.type];
+      var wo=WORKOUTS[d.type]||{label:d.woLabel||d.type,exos:[],isRest:true};
       if(!wo.exos||wo.isRest)return;
       var factor = d.done==='yes'?1.0 : d.done==='mvw'?0.5 : d.done==='no'?0 : 0.7;
       wo.exos.forEach(function(e){
@@ -2062,7 +2120,7 @@ var nutLog=JSON.parse(localStorage.getItem('nt_log')||'{}');
 var nutCustom=JSON.parse(localStorage.getItem('nt_custom')||'[]');
 var nutGoals=JSON.parse(localStorage.getItem('nt_goals')||'null')||{kcal:2470,prot:185,carb:250,fat:82,water:3300};
 var nutCurD=(function(){var d=new Date();return d.getFullYear()+'-'+pd(d.getMonth()+1)+'-'+pd(d.getDate());})();
-var nutSelF=null,nutSelM=null,nutBaseCat='';
+var nutSelF=null,nutSelM=null,nutBaseCat='',nutEditRef=null;
 function nutSave(){localStorage.setItem('nt_log',JSON.stringify(nutLog));}
 function nutAllF(){return NUT_DB.concat(nutCustom);}
 function nutDay(k){if(!nutLog[k])nutLog[k]={meals:{},water:0};if(nutLog[k].water==null)nutLog[k].water=0;return nutLog[k];}
@@ -2125,7 +2183,7 @@ function renderNutri(){
     var rows=items.map(function(it,ii){
       var f=foods[it.idx];if(!f)return '';
       var c=nutCalcItem(f,it.qty);
-      return '<div class="meal-item"><div class="mi-name">'+f.n+'<div class="mi-qty">'+it.qty+' g</div></div>'
+      return '<div class="meal-item"><div class="mi-name" style="cursor:pointer" onclick="nutEditItem(\''+m.id+'\','+ii+')">'+f.n+'<div class="mi-qty">'+it.qty+' g \u00b7 \u270f\ufe0f modifier</div></div>'
         +'<span class="mi-kcal">'+Math.round(c.k)+' kcal</span>'
         +'<button class="mi-rm" onclick="nutRm(\''+m.id+'\','+ii+')">\u2715</button></div>';
     }).join('');
@@ -2163,21 +2221,38 @@ function nutRm(mid,ii){
 }
 // ── Modal ajout ──
 function nutOpenAdd(mid){
-  nutSelM=mid;nutSelF=null;
+  nutSelM=mid;nutSelF=null;nutEditRef=null;
   var m=NUT_MEALS.find(function(x){return x.id===mid;});
   document.getElementById('nutModalTitle').textContent='Ajouter \u2014 '+(m?m.lb:'');
   document.getElementById('nutModalSearch').value='';
   document.getElementById('nutModalSel').style.display='none';
+  document.getElementById('nutConfirmBtn').textContent='Ajouter au repas';
   document.getElementById('nutModal').classList.add('show');
   nutModalList();
 }
+function nutEditItem(mid,ii){
+  var it=nutMeal(nutCurD,mid)[ii];
+  if(!it)return;
+  nutSelM=mid;nutSelF=it.idx;nutEditRef={mid:mid,ii:ii};
+  var m=NUT_MEALS.find(function(x){return x.id===mid;});
+  document.getElementById('nutModalTitle').textContent='Modifier \u2014 '+(m?m.lb:'');
+  document.getElementById('nutModalSearch').value='';
+  document.getElementById('nutModalFoods').innerHTML='';
+  var f=nutAllF()[it.idx];
+  document.getElementById('nutSelName').textContent=f?f.n:'';
+  document.getElementById('nutQty').value=it.qty;
+  document.getElementById('nutModalSel').style.display='block';
+  document.getElementById('nutConfirmBtn').textContent='Modifier la quantit\u00e9';
+  document.getElementById('nutModal').classList.add('show');
+  nutPrev();
+}
 function nutCloseModal(){document.getElementById('nutModal').classList.remove('show');}
 function nutModalList(){
-  var q=(document.getElementById('nutModalSearch').value||'').toLowerCase();
+  var q=normS(document.getElementById('nutModalSearch').value||'');
   var foods=nutAllF();
   var out='';var n=0;
   foods.forEach(function(f,idx){
-    if(q&&f.n.toLowerCase().indexOf(q)<0)return;
+    if(q&&normS(f.n).indexOf(q)<0)return;
     if(n>=40)return;n++;
     out+='<div class="food-card" style="cursor:pointer" onclick="nutSelect('+idx+')">'
       +'<div style="flex:1;min-width:0"><div class="fc-name">'+f.n+'</div>'
@@ -2208,9 +2283,15 @@ function nutPrev(){
 function nutConfirm(){
   if(nutSelF==null)return;
   var q=+document.getElementById('nutQty').value||100;
-  nutMeal(nutCurD,nutSelM).push({idx:nutSelF,qty:q});
+  if(nutEditRef){
+    nutMeal(nutCurD,nutEditRef.mid)[nutEditRef.ii]={idx:nutSelF,qty:q};
+    nutEditRef=null;
+    toast('\u270f\ufe0f Quantit\u00e9 modifi\u00e9e');
+  } else {
+    nutMeal(nutCurD,nutSelM).push({idx:nutSelF,qty:q});
+    toast('\u2705 Ajout\u00e9');
+  }
   nutSave();nutCloseModal();renderNutri();
-  toast('\u2705 Ajout\u00e9');
 }
 // ── Base alimentaire ──
 function renderBase(){
@@ -2221,12 +2302,12 @@ function renderBase(){
     var sel=document.getElementById('cf-cat');
     if(sel)sel.innerHTML=Object.keys(NUT_CATS).map(function(c){return '<option value="'+c+'">'+NUT_CATS[c]+'</option>';}).join('');
   }
-  var q=(document.getElementById('baseSearch').value||'').toLowerCase();
+  var q=normS(document.getElementById('baseSearch').value||'');
   var foods=nutAllF();
   var out='';var n=0;
   foods.forEach(function(f,idx){
     if(nutBaseCat&&f.cat!==nutBaseCat)return;
-    if(q&&f.n.toLowerCase().indexOf(q)<0)return;
+    if(q&&normS(f.n).indexOf(q)<0)return;
     n++;if(n>60)return;
     var custom=idx>=NUT_DB.length;
     out+='<div class="food-card">'
@@ -2403,6 +2484,674 @@ function renderNutriStats(){
   mkLine('cProt',lbls,days.map(function(k){return Math.round(nutTotals(k).t.p);}),'#f87171',{min:0,refLine:nutGoals.prot});
 }
 
+
+// ══════════ GRIMOIRE — BASE DES TECHNIQUES ══════════
+
+// ══════════ CARTE ANATOMIQUE ══════════
+// Zones : pecs delts biceps forearms abs obliques quads calves traps lats triceps lowback glutes hams neck
+function bodyMap(m){
+  m=m||{};
+  function fillOf(id){
+    var v=m[id]||0;
+    if(v>=1)return'url(#mprim)';
+    if(v>=.4)return'url(#msec)';
+    if(v>0)return'rgba(255,140,26,.35)';
+    return'#45415a';
+  }
+  function glow(id){return (m[id]||0)>=1?' filter="url(#mg)"':'';}
+  function P(id,d){return'<path d="'+d+'" fill="'+fillOf(id)+'"'+glow(id)+'/>';}
+  function E(id,cx,cy,rx,ry,rot){return'<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+ry+'" fill="'+fillOf(id)+'"'+(rot?' transform="rotate('+rot+' '+cx+' '+cy+')"':'')+glow(id)+'/>';}
+  function EM(id,dx,cy,rx,ry,rot,cx0){ // paire miroir autour de cx0
+    return E(id,cx0-dx,cy,rx,ry,rot?-rot:0)+E(id,cx0+dx,cy,rx,ry,rot||0);
+  }
+  function PM(id,d,cx0){
+    var d2=d.replace(/(-?\d+\.?\d*)([, ])(-?\d+\.?\d*)/g,function(_,x,sep,y){return (2*cx0-parseFloat(x)).toFixed(1)+sep+y;});
+    return P(id,d)+P(id,d2);
+  }
+  // Contour organique (bras légèrement écartés, jambes séparées)
+  function outline(c){
+    return '<path d="M'+c+',5.5 C'+(c+6.5)+',5.5 '+(c+8.5)+',11 '+(c+8.5)+',16 C'+(c+8.5)+',21 '+(c+6.5)+',25 '+(c+4.5)+',27 L'+(c+4.5)+',31 C'+(c+13)+',33 '+(c+21)+',35 '+(c+25)+',40 C'+(c+28)+',44 '+(c+29)+',52 '+(c+30)+',60 L'+(c+34)+',88 C'+(c+34.5)+',92 '+(c+33)+',95 '+(c+31)+',96 L'+(c+29)+',97 C'+(c+27)+',97.5 '+(c+26)+',95 '+(c+26)+',92 L'+(c+22)+',66 L'+(c+20)+',80 C'+(c+19)+',90 '+(c+18)+',96 '+(c+17)+',104 C'+(c+16.5)+',122 '+(c+15.5)+',140 '+(c+13.5)+',158 L'+(c+11.5)+',186 C'+(c+11)+',191 '+(c+10)+',194 '+(c+5.5)+',194 C'+(c+2.5)+',194 '+(c+2)+',191 '+(c+2)+',186 L'+(c+2)+',150 C'+(c+2)+',140 '+(c+1)+',120 '+c+',110 C'+(c-1)+',120 '+(c-2)+',140 '+(c-2)+',150 L'+(c-2)+',186 C'+(c-2)+',191 '+(c-2.5)+',194 '+(c-5.5)+',194 C'+(c-10)+',194 '+(c-11)+',191 '+(c-11.5)+',186 L'+(c-13.5)+',158 C'+(c-15.5)+',140 '+(c-16.5)+',122 '+(c-17)+',104 C'+(c-18)+',96 '+(c-19)+',90 '+(c-20)+',80 L'+(c-22)+',66 L'+(c-26)+',92 C'+(c-26)+',95 '+(c-27)+',97.5 '+(c-29)+',97 L'+(c-31)+',96 C'+(c-33)+',95 '+(c-34.5)+',92 '+(c-34)+',88 L'+(c-30)+',60 C'+(c-29)+',52 '+(c-28)+',44 '+(c-25)+',40 C'+(c-21)+',35 '+(c-13)+',33 '+(c-4.5)+',31 L'+(c-4.5)+',27 C'+(c-6.5)+',25 '+(c-8.5)+',21 '+(c-8.5)+',16 C'+(c-8.5)+',11 '+(c-6.5)+',5.5 '+c+',5.5 Z" fill="#26232e" stroke="#a8a4b8" stroke-width="1.5"/>';
+  }
+  var f=52,b=158;
+  // ─── FACE ───
+  var front=outline(f)
+    +P('neck','M'+(f-4.5)+',26 L'+(f+4.5)+',26 L'+(f+5)+',31.5 L'+(f-5)+',31.5 Z')
+    +PM('traps','M'+(f-5.5)+',33 Q'+(f-11)+',33 '+(f-16)+',36.5 Q'+(f-10)+',38.5 '+(f-5.5)+',37.5 Z',f)
+    +EM('delts',21.5,42,6.2,7,-18,f)
+    +PM('pecs','M'+(f-15)+',39.5 Q'+(f-2)+',40.5 '+(f-1.5)+',44 L'+(f-1.5)+',54 Q'+(f-1.5)+',59.5 '+(f-8)+',58.5 Q'+(f-15)+',57 '+(f-15.5)+',49 Z',f)
+    +EM('biceps',24.5,58,3.6,8.5,-8,f)
+    +EM('forearms',27.5,78,3,9.5,-7,f)
+    +(function(){var a='',c=f;
+      [[64.5,3.1],[73.5,3.3],[82.5,3.5]].forEach(function(r){
+        a+=EM('abs',3.9,r[0],3.3,r[1],0,c);
+      });
+      a+=E('abs',c,91.5,6.5,3.4,0);
+      return a;})()
+    +PM('obliques','M'+(f-14.5)+',60 Q'+(f-10)+',62 '+(f-9)+',66 L'+(f-9)+',86 Q'+(f-13)+',83 '+(f-15.5)+',76 Z',f)
+    +EM('quads',9,124,5.6,22,3,f)
+    +EM('calves',7.5,168,3.6,13,2,f)
+    ;
+  // ─── DOS ───
+  var back=outline(b)
+    +P('traps','M'+b+',32 Q'+(b+9)+',32.5 '+(b+16)+',37 Q'+(b+9)+',41 '+(b+5)+',46 L'+(b+4)+',68 Q'+b+',72 '+(b-4)+',68 L'+(b-5)+',46 Q'+(b-9)+',41 '+(b-16)+',37 Q'+(b-9)+',32.5 '+b+',32 Z')
+    +EM('delts',21.5,42,6.2,7,18,b)
+    +EM('triceps',24.5,58,3.7,8.5,8,b)
+    +EM('forearms',27.5,78,3,9.5,7,b)
+    +PM('lats','M'+(b-16)+',47 Q'+(b-7)+',52 '+(b-6)+',58 L'+(b-6)+',72 Q'+(b-10)+',72 '+(b-14)+',66 Q'+(b-17)+',58 '+(b-16.5)+',50 Z',b)
+    +PM('lowback','M'+(b-4.5)+',72 L'+(b-1)+',73 L'+(b-1)+',89 L'+(b-4)+',88 Q'+(b-5.5)+',80 '+(b-4.5)+',72 Z',b)
+    +EM('glutes',7.5,101,7.2,8.5,0,b)
+    +EM('hams',8.5,128,5.4,20,2,b)
+    +EM('calves',7.5,168,3.8,13.5,2,b)
+    ;
+  return '<svg viewBox="0 0 210 206" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;max-height:260px">'
+    +'<defs>'
+    +'<radialGradient id="mprim" cx="50%" cy="40%" r="75%"><stop offset="0%" stop-color="#ffb340"/><stop offset="55%" stop-color="#ff8c1a"/><stop offset="100%" stop-color="#f26800"/></radialGradient>'
+    +'<radialGradient id="msec" cx="50%" cy="40%" r="75%"><stop offset="0%" stop-color="rgba(255,160,60,.85)"/><stop offset="100%" stop-color="rgba(242,110,10,.7)"/></radialGradient>'
+    +'<filter id="mg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6" result="bl"/><feMerge><feMergeNode in="bl"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    +'</defs>'
+    +front+back
+    +'<text x="52" y="204" text-anchor="middle" fill="rgba(168,164,184,.6)" font-size="7.5" font-family="sans-serif" letter-spacing="2.5">FACE</text>'
+    +'<text x="158" y="204" text-anchor="middle" fill="rgba(168,164,184,.6)" font-size="7.5" font-family="sans-serif" letter-spacing="2.5">DOS</text>'
+    +'</svg>';
+}
+var EXO_DB=[
+{id:'pompes_incl',m:{pecs:1,triceps:.6,delts:.4,abs:.3},n:'Pompes inclin\u00e9es',g:'Pompes inclin\u00e9es',cat:'push',mus:'Pectoraux \u00b7 Triceps \u00b7 \u00c9paules ant.',
+ svg:{props:'<rect x="20" y="70" width="34" height="38" rx="3" fill="none" stroke="rgba(160,155,176,.4)" stroke-width="2"/>',
+  ghost:{h:[52,38],l:[[57,44,88,58,138,80],[58,46,40,68],[138,80,172,104]]},
+  main:{h:[44,56],l:[[50,61,86,70,138,84],[50,62,38,70],[138,84,172,105]]},
+  arrow:'M70,36 Q60,44 62,52'},
+ steps:['Mains sur un support stable \u00e0 hauteur de hanches (lit, muret, barre), largeur \u00e9paules.','Corps parfaitement align\u00e9 t\u00eate-hanches-chevilles, gainage serr\u00e9.','Descends la poitrine vers le support en 2 secondes, coudes \u00e0 ~45\u00b0 du buste.','Pousse en 2 secondes jusqu\u2019\u00e0 bras tendus sans verrouiller brutalement.'],
+ breath:'Inspire en descendant, expire en poussant.',
+ errors:['Hanches qui tombent ou fesses en l\u2019air \u2014 le corps doit rester une planche','Coudes \u00e9cart\u00e9s \u00e0 90\u00b0 (stress \u00e9paules)','Amplitude coup\u00e9e \u2014 la poitrine doit approcher le support'],
+ keys:['Plus le support est bas, plus c\u2019est dur \u2014 ta progression naturelle vers la pompe au sol','Regarde l\u00e9g\u00e8rement devant, pas tes pieds'],
+ easier:'Support plus haut (mur)',harder:'Support plus bas \u2192 pompes au sol'},
+{id:'pompes_sol',m:{pecs:1,triceps:.6,delts:.4,abs:.4},n:'Pompes au sol',g:'Pompes',cat:'push',mus:'Pectoraux \u00b7 Triceps \u00b7 Core',
+ svg:{ghost:{h:[38,44],l:[[45,50,95,62,145,72],[46,52,42,74],[145,72,175,104]]},
+  main:{h:[34,80],l:[[42,86,92,90,145,92],[44,86,38,104],[145,92,175,105]]},
+  arrow:'M60,50 Q52,64 54,76'},
+ steps:['Mains au sol largeur \u00e9paules, doigts vers l\u2019avant, poignets sous les \u00e9paules.','Corps gain\u00e9 en planche \u2014 fessiers et abdos serr\u00e9s AVANT de descendre.','Descends en 2s, coudes \u00e0 45\u00b0, jusqu\u2019\u00e0 ce que la poitrine fr\u00f4le le sol.','Pousse le sol en expirant, sans casser l\u2019alignement.'],
+ breath:'Inspire \u00e0 la descente, expire \u00e0 la pouss\u00e9e.',
+ errors:['T\u00eate qui pique en avant \u2014 c\u2019est la poitrine qui descend, pas le menton','Hanches qui s\u2019affaissent (lombaires en danger)','Demi-r\u00e9p\u00e9titions \u2014 mieux vaut 3 compl\u00e8tes que 6 moiti\u00e9s'],
+ keys:['Visse tes mains dans le sol (rotation externe) : \u00e9paules stables','Ton record actuel : 5 \u2014 le boss des 10 t\u2019attend'],
+ easier:'Pompes inclin\u00e9es',harder:'Pompes diamant \u00b7 pieds sur\u00e9lev\u00e9s'},
+{id:'pompes_diam',m:{triceps:1,pecs:.6,delts:.3,abs:.3},n:'Pompes diamant',g:'Pompes resserr\u00e9es',cat:'push',mus:'Triceps \u00b7 Pectoraux int.',
+ svg:{ghost:{h:[38,44],l:[[45,50,95,62,145,72],[46,52,44,74],[145,72,175,104]]},
+  main:{h:[34,80],l:[[42,86,92,90,145,92],[44,86,42,104],[145,92,175,105]]},
+  props:'<path d="M36,102 l6,-5 l6,5 l-6,5 z" fill="none" stroke="rgba(227,194,107,.7)" stroke-width="2"/>',
+  arrow:'M60,50 Q52,64 54,76'},
+ steps:['Mains jointes sous la poitrine, pouces et index formant un losange.','M\u00eame gainage strict que la pompe classique.','Descends la poitrine vers le losange, coudes qui frottent presque les c\u00f4tes.','Pousse en gardant les coudes pr\u00e8s du corps.'],
+ breath:'Inspire en bas, expire en poussant.',
+ errors:['Coudes qui partent sur les c\u00f4t\u00e9s \u2014 tout l\u2019int\u00e9r\u00eat est de les garder serr\u00e9s','Losange plac\u00e9 trop haut (sous le visage) \u2014 il doit \u00eatre sous la poitrine'],
+ keys:['Exercice roi du triceps \u2014 vigilance sur ton triceps gauche : douleur = stop imm\u00e9diat'],
+ easier:'Diamant inclin\u00e9 sur support',harder:'Archer push-up'},
+{id:'pike',m:{delts:1,triceps:.6,traps:.3,abs:.3},n:'Pike push-ups',g:'Pompes pike',cat:'push',mus:'\u00c9paules \u00b7 Triceps',
+ svg:{ghost:{h:[60,38],l:[[64,44,84,72,140,90],[62,44,54,72],[140,90,168,105]]},
+  main:{h:[52,62],l:[[58,66,84,72,140,90],[54,66,48,88],[140,90,168,105]]},
+  arrow:'M74,42 Q62,50 60,58'},
+ steps:['Position pompe puis recule les pieds et l\u00e8ve les hanches : corps en V invers\u00e9.','Mains largeur \u00e9paules, regard entre les mains.','Fl\u00e9chis les coudes pour amener le sommet du cr\u00e2ne vers le sol.','Pousse dans l\u2019axe des bras (vertical), pas vers l\u2019avant.'],
+ breath:'Inspire en descendant, expire en remontant.',
+ errors:['Hanches trop basses \u2014 \u00e7a redevient une pompe classique','Descendre le front au lieu du sommet du cr\u00e2ne'],
+ keys:['C\u2019est ton \u00e9chelon vers le handstand push-up (boss lvl 75)','Talons au sol pas n\u00e9cessaires \u2014 hanches hautes prioritaires'],
+ easier:'Pompes inclin\u00e9es',harder:'Pike pieds sur\u00e9lev\u00e9s \u2192 HSPU'},
+{id:'dips',m:{triceps:1,pecs:.6,delts:.4},n:'Dips (barres)',g:'Dips',cat:'push',mus:'Triceps \u00b7 Pecs inf. \u00b7 \u00c9paules',
+ svg:{props:'<line x1="40" y1="50" x2="40" y2="108" stroke="rgba(160,155,176,.4)" stroke-width="3"/><line x1="96" y1="50" x2="96" y2="108" stroke="rgba(160,155,176,.4)" stroke-width="3"/>',
+  ghost:{h:[68,28],l:[[68,34,68,64],[68,40,42,52],[68,40,94,52],[68,64,78,90]]},
+  main:{h:[68,44],l:[[68,50,68,76],[68,52,44,54],[68,52,92,54],[68,76,80,98]]},
+  arrow:'M110,34 Q112,44 110,54'},
+ steps:['Sur tes barres Corength : bras tendus, \u00e9paules basses (loin des oreilles), l\u00e9ger gainage.','Descends en 2s en fl\u00e9chissant les coudes vers l\u2019arri\u00e8re, buste l\u00e9g\u00e8rement pench\u00e9.','Stop quand les \u00e9paules arrivent au niveau des coudes (~90\u00b0).','Pousse fort jusqu\u2019\u00e0 bras tendus, \u00e9paules toujours basses.'],
+ breath:'Inspire en bas, expire \u00e0 la mont\u00e9e.',
+ errors:['Descendre trop bas (\u00e9paules en souffrance)','\u00c9paules qui remontent vers les oreilles','\u00c9lan avec les jambes'],
+ keys:['Boss lvl 20 : 8 dips stricts','Si trop dur : dips n\u00e9gatifs (descente lente seule, remont\u00e9e avec les pieds)'],
+ easier:'Dips n\u00e9gatifs \u00b7 bandes en assistance',harder:'Dips lest\u00e9s \u00b7 dips coréens'},
+{id:'rowing',m:{lats:1,biceps:.5,traps:.5,forearms:.3},n:'Rowing \u00e9lastique',g:'Rowing avec \u00e9lastique',cat:'pull',mus:'Grand dorsal \u00b7 Biceps \u00b7 Trap\u00e8zes',
+ svg:{props:'<line x1="24" y1="58" x2="24" y2="108" stroke="rgba(160,155,176,.4)" stroke-width="3"/>',
+  ghost:{h:[92,36],l:[[90,42,84,74],[88,50,52,58],[84,74,76,104],[84,74,96,104]]},
+  main:{h:[96,34],l:[[94,40,88,72],[92,48,66,44],[24,60,64,46],[88,72,80,104],[88,72,100,104]]},
+  arrow:'M52,62 Q62,54 70,50'},
+ steps:['\u00c9lastique ancr\u00e9 \u00e0 la porte (hauteur nombril), un pas de recul, tension de d\u00e9part.','Buste droit, genoux souples, \u00e9paules basses.','Tire les poign\u00e9es vers les basses c\u00f4tes en serrant les omoplates.','Marque 1 seconde omoplates serr\u00e9es, puis rel\u00e2che en 2s en contr\u00f4lant.'],
+ breath:'Expire en tirant, inspire au retour.',
+ errors:['Tirer avec les bras seuls \u2014 le mouvement part des omoplates','Buste qui bascule en arri\u00e8re pour tricher','Retour l\u00e2ch\u00e9 sans contr\u00f4le (c\u2019est 50% du gain)'],
+ keys:['Le pull, le socle de ta posture \u2014 jamais moins de volume que le push','Bande SW plus dure quand 3\u00d712 devient facile'],
+ easier:'Bande plus l\u00e9g\u00e8re',harder:'Bande plus lourde \u00b7 rowing unilat\u00e9ral'},
+{id:'latpull',m:{lats:1,biceps:.5,forearms:.3},n:'Lat pulls \u00e9lastique',g:'Pull-down avec \u00e9lastique',cat:'pull',mus:'Grand dorsal \u00b7 Biceps',
+ svg:{props:'<line x1="60" y1="12" x2="76" y2="12" stroke="rgba(160,155,176,.5)" stroke-width="3"/>',
+  ghost:{h:[68,40],l:[[68,46,68,78],[68,50,64,20],[68,50,74,20],[68,78,58,104],[68,78,80,104]]},
+  main:{h:[68,44],l:[[68,50,68,80],[68,54,50,44],[68,54,88,44],[68,80,58,105],[68,80,80,105]]},
+  arrow:'M92,22 Q94,32 90,40'},
+ steps:['\u00c9lastique ancr\u00e9 en haut de porte, \u00e0 genoux ou assis, bras tendus vers l\u2019ancrage.','Poitrine fi\u00e8re, l\u00e9g\u00e8re cambrure naturelle.','Tire les coudes vers le bas et l\u00e9g\u00e8rement en arri\u00e8re, poign\u00e9es vers les \u00e9paules.','Rel\u00e2che en 2-3s en r\u00e9sistant \u00e0 l\u2019\u00e9lastique.'],
+ breath:'Expire en tirant, inspire au retour.',
+ errors:['\u00c9paules qui montent en fin de tirage','Tirer derri\u00e8re la nuque (inutile et risqu\u00e9)'],
+ keys:['Pense \u00ab coudes dans les poches \u00bb \u2014 c\u2019est le dorsal qui tire','Pr\u00e9pare ta premi\u00e8re traction (boss lvl 30)'],
+ easier:'Bande l\u00e9g\u00e8re',harder:'Bande lourde \u00b7 tractions n\u00e9gatives'},
+{id:'facepull',m:{traps:1,delts:.6,forearms:.2},n:'Face pulls',g:'Traction de face avec \u00e9lastique',cat:'pull',mus:'Trap\u00e8zes \u00b7 \u00c9paules post. \u00b7 Coiffe',
+ svg:{props:'<line x1="20" y1="34" x2="20" y2="108" stroke="rgba(160,155,176,.4)" stroke-width="3"/>',
+  ghost:{h:[96,40],l:[[94,46,90,78],[92,52,56,42],[90,78,82,105],[90,78,102,105]]},
+  main:{h:[100,38],l:[[98,44,94,76],[96,50,76,36],[76,36,60,40],[20,38,58,40],[94,76,86,105],[94,76,106,105]]},
+  arrow:'M52,30 Q66,26 76,30'},
+ steps:['\u00c9lastique ancr\u00e9 hauteur du visage, prise paumes vers le sol.','Tire vers ton visage en \u00e9cartant les coudes hauts et larges.','Fin de mouvement : poings de chaque c\u00f4t\u00e9 de la t\u00eate, omoplates serr\u00e9es.','Retour lent, \u00e9paules toujours basses.'],
+ breath:'Expire en tirant.',
+ errors:['Coudes qui tombent (\u00e7a devient un rowing)','Tirer trop lourd \u2014 c\u2019est un exercice de sant\u00e9, pas de force'],
+ keys:['Ton assurance-vie anti-\u00e9paules enroul\u00e9es \u2014 pr\u00e9sent chaque semaine, l\u00e9ger et propre'],
+ easier:'Bande tr\u00e8s l\u00e9g\u00e8re',harder:'Pause 2s en fin de tirage'},
+{id:'pullapart',m:{traps:1,delts:.6},n:'Band pull-apart',g:'Pull-Apart avec \u00e9lastique',cat:'pull',mus:'\u00c9paules post. \u00b7 Rhombo\u00efdes',
+ svg:{ghost:{h:[100,34],l:[[100,40,100,74],[100,48,74,44],[100,48,126,44],[100,74,90,105],[100,74,110,105]]},
+  main:{h:[100,34],l:[[100,40,100,74],[100,48,58,50],[100,48,142,50],[100,74,90,105],[100,74,110,105]]},
+  arrow:'M80,38 Q70,42 64,46'},
+ steps:['Debout, \u00e9lastique tenu devant toi \u00e0 hauteur d\u2019\u00e9paules, bras tendus, mains largeur \u00e9paules.','\u00c9carte les bras jusqu\u2019\u00e0 ce que l\u2019\u00e9lastique touche la poitrine.','Serre les omoplates 1 seconde.','Retour contr\u00f4l\u00e9 sans laisser l\u2019\u00e9lastique claquer.'],
+ breath:'Expire en \u00e9cartant.',
+ errors:['Plier les coudes','Hausser les \u00e9paules','Cambrer pour finir le mouvement'],
+ keys:['\u00c9chauffement et \u00e9quilibrage \u2014 le petit exercice qui prot\u00e8ge tout le haut du corps'],
+ easier:'Prise plus large',harder:'Prise plus serr\u00e9e \u00b7 tempo lent'},
+{id:'reversefly',m:{delts:1,traps:.6},n:'Reverse fly \u00e9lastique',g:'\u00c9cart\u00e9 avec \u00e9lastique invers\u00e9',cat:'pull',mus:'\u00c9paules post. \u00b7 Trap\u00e8zes moy.',
+ svg:{ghost:{h:[86,42],l:[[86,48,96,74],[88,54,66,66],[88,54,110,66],[96,74,88,105],[96,74,106,105]]},
+  main:{h:[84,40],l:[[84,46,96,74],[86,52,48,44],[86,52,124,44],[96,74,88,105],[96,74,106,105]]},
+  arrow:'M60,60 Q52,52 50,46'},
+ steps:['Buste pench\u00e9 \u00e0 45\u00b0, dos plat, \u00e9lastique sous les pieds ou ancr\u00e9 bas, crois\u00e9 dans les mains.','Bras l\u00e9g\u00e8rement fl\u00e9chis, ouvre-les sur les c\u00f4t\u00e9s comme des ailes.','Monte jusqu\u2019\u00e0 l\u2019horizontale des \u00e9paules, omoplates serr\u00e9es.','Redescends en 2s.'],
+ breath:'Expire en ouvrant.',
+ errors:['Buste qui se redresse \u00e0 chaque r\u00e9p\u00e9tition','\u00c9lan \u2014 le mouvement est strict et lent'],
+ keys:['\u00c9paules post\u00e9rieures = le muscle oubli\u00e9 qui \u00e9quilibre tous tes push'],
+ easier:'Moins pench\u00e9',harder:'Pause haute 2s'},
+{id:'curl',m:{biceps:1,forearms:.5},n:'Curl biceps \u00e9lastique',g:'Flexion des biceps avec \u00e9lastique',cat:'pull',mus:'Biceps \u00b7 Avant-bras',
+ svg:{ghost:{h:[100,34],l:[[100,40,100,76],[100,50,112,72],[100,76,90,105],[100,76,110,105]]},
+  main:{h:[100,34],l:[[100,40,100,76],[100,50,114,58],[114,58,108,38],[100,76,90,105],[100,76,110,105]]},
+  arrow:'M124,66 Q128,52 120,42'},
+ steps:['Debout sur l\u2019\u00e9lastique, poign\u00e9es en mains, bras le long du corps.','Coudes coll\u00e9s aux c\u00f4tes \u2014 ils ne bougent pas de tout l\u2019exercice.','Monte les poign\u00e9es vers les \u00e9paules en 1-2s.','Redescends en 3s en r\u00e9sistant.'],
+ breath:'Expire en montant.',
+ errors:['Coudes qui avancent (\u00e9paules qui prennent le relais)','Balancier du buste','Descente l\u00e2ch\u00e9e'],
+ keys:['La descente lente construit plus que la mont\u00e9e'],
+ easier:'Bande l\u00e9g\u00e8re',harder:'Bande lourde \u00b7 tempo 1-0-4'},
+{id:'planche',m:{abs:1,obliques:.4,delts:.3,lowback:.2},n:'Planche',g:'Planche',cat:'core',mus:'Abdos profonds \u00b7 \u00c9paules',
+ svg:{main:{h:[36,72],l:[[44,78,95,82,146,86],[44,80,40,104],[146,86,176,105]]},
+  props:'<line x1="44" y1="79" x2="146" y2="85" stroke="rgba(74,222,128,.5)" stroke-width="1.5" stroke-dasharray="4,3"/>'},
+ steps:['Coudes sous les \u00e9paules, avant-bras au sol parall\u00e8les.','Corps align\u00e9 t\u00eate-\u00e9paules-hanches-chevilles \u2014 une seule ligne.','Serre fessiers + abdos + cuisses AVANT de commencer le chrono.','Respire normalement \u2014 pas d\u2019apn\u00e9e.'],
+ breath:'Respiration continue, jamais bloqu\u00e9e.',
+ errors:['Hanches qui montent (plus facile mais inutile)','Hanches qui tombent (lombaires en souffrance)','T\u00eate relev\u00e9e \u2014 regard au sol'],
+ keys:['La qualit\u00e9 avant le chrono : 30s parfaites > 60s tordues','Ton pic : 105s \u2014 il reviendra'],
+ easier:'Planche genoux au sol',harder:'Planche bras tendus \u00b7 lever un pied'},
+{id:'planche_lat',m:{obliques:1,abs:.5,delts:.3},n:'Planche lat\u00e9rale',g:'Planche lat\u00e9rale',cat:'core',mus:'Obliques \u00b7 \u00c9paule',
+ svg:{main:{h:[42,58],l:[[50,64,100,76,150,88],[50,66,46,90],[46,90,44,105],[150,88,176,104]]},
+  props:'<line x1="50" y1="65" x2="150" y2="87" stroke="rgba(74,222,128,.5)" stroke-width="1.5" stroke-dasharray="4,3"/>'},
+ steps:['Sur le c\u00f4t\u00e9, coude sous l\u2019\u00e9paule, pieds empil\u00e9s ou d\u00e9cal\u00e9s.','D\u00e9colle les hanches : ligne droite \u00e9paule-hanche-cheville.','Hanches hautes tout du long \u2014 c\u2019est LE point cl\u00e9.','Change de c\u00f4t\u00e9 apr\u00e8s le temps pr\u00e9vu.'],
+ breath:'Respiration continue.',
+ errors:['Hanche qui s\u2019affaisse vers le sol','Buste qui part en avant ou en arri\u00e8re \u2014 imagine-toi entre deux vitres'],
+ keys:['Les obliques : le lien entre ton haut et ton bas du corps'],
+ easier:'Genou inf\u00e9rieur au sol',harder:'Pieds empil\u00e9s \u00b7 jambe sup. lev\u00e9e'},
+{id:'deadbug',m:{abs:1,obliques:.4},n:'Dead bug',g:'Dead Bug',cat:'core',mus:'Abdos profonds \u00b7 Coordination',
+ svg:{ghost:{l:[[70,88,70,58],[100,88,100,66,116,66],[0,0]],h:[54,88]},
+  main:{h:[54,88],l:[[60,88,130,88],[80,88,76,60],[104,88,124,72,140,80],[92,88,96,58],[112,88,120,98,134,92]]},
+  arrow:'M126,60 Q136,66 140,74'},
+ steps:['Allong\u00e9 sur le dos, bras tendus vers le plafond, genoux \u00e0 90\u00b0 au-dessus des hanches.','PLAQUE le bas du dos au sol \u2014 il ne d\u00e9colle jamais.','Descends lentement bras droit et jambe gauche vers le sol, sans les poser.','Reviens et alterne. Lent = efficace.'],
+ breath:'Expire longuement pendant la descente (\u00e7a verrouille le core).',
+ errors:['Bas du dos qui se cambre \u2014 r\u00e9duis l\u2019amplitude si \u00e7a arrive','Aller trop vite'],
+ keys:['Le meilleur exercice core sans risque lombaire \u2014 parfait post-blessure'],
+ easier:'Jambes seules',harder:'Bras+jambe simultan\u00e9s amplitude compl\u00e8te'},
+{id:'hollow',m:{abs:1,quads:.3,obliques:.3},n:'Hollow body',g:'Maintien en position creuse',cat:'core',mus:'Abdos \u00b7 Fl\u00e9chisseurs hanche',
+ svg:{main:{h:[52,74],l:[[58,78,100,88,138,78],[58,76,44,62],[138,78,158,68]]},
+  props:'<path d="M58,90 Q100,98 140,90" fill="none" stroke="rgba(74,222,128,.4)" stroke-width="1.5" stroke-dasharray="4,3"/>'},
+ steps:['Allong\u00e9 sur le dos, bras tendus derri\u00e8re la t\u00eate, jambes tendues.','Plaque les lombaires au sol puis d\u00e9colle \u00e9paules ET jambes de ~20cm.','Corps en forme de banane, tenu, sans trembler du cou.','Tiens la position \u2014 c\u2019est un gainage dynamique.'],
+ breath:'Respiration courte et continue.',
+ errors:['Lombaires qui d\u00e9collent (monte plus les jambes pour compenser)','Menton \u00e9cras\u00e9 sur la poitrine'],
+ keys:['La position de base de tout le calisthenics avanc\u00e9 \u2014 L-sit, front lever, muscle-up passent par l\u00e0'],
+ easier:'Genoux fl\u00e9chis \u00b7 bras le long du corps',harder:'Hollow rocks (balancier)'},
+{id:'superman',m:{lowback:1,glutes:.6,hams:.3,traps:.3},n:'Superman',g:'Superman',cat:'core',mus:'Lombaires \u00b7 Fessiers \u00b7 Dorsaux',
+ svg:{main:{h:[40,74],l:[[48,80,100,88,140,82],[48,78,30,68],[140,82,164,72]]},
+  arrow:'M30,62 Q28,56 32,52'},
+ steps:['Allong\u00e9 sur le ventre, bras tendus devant, jambes tendues.','D\u00e9colle simultan\u00e9ment bras, poitrine et jambes en 2 secondes.','Tiens 1-2s en haut en serrant fessiers et lombaires.','Redescends lentement sans poser compl\u00e8tement.'],
+ breath:'Expire en montant.',
+ errors:['Coup de rein brutal \u2014 mont\u00e9e LENTE','Regarder devant (nuque cass\u00e9e) \u2014 regard au sol'],
+ keys:['L\u2019antagoniste de tous tes gainages ventraux \u2014 l\u2019\u00e9quilibre avant-arri\u00e8re du core'],
+ easier:'Bras seuls puis jambes seules',harder:'Pause 3s \u00b7 superman nageur'},
+{id:'squat',m:{quads:1,glutes:.7,hams:.3,calves:.2,abs:.2},n:'Squats',g:'Squat',cat:'legs',mus:'Quadriceps \u00b7 Fessiers',
+ svg:{ghost:{h:[96,22],l:[[96,28,96,62],[96,36,80,48],[96,36,112,48],[96,62,92,105],[96,62,102,105]]},
+  main:{h:[88,44],l:[[88,50,84,72],[88,56,64,52],[88,56,112,52],[84,72,92,90,90,105],[84,72,102,88,104,105]]},
+  arrow:'M124,32 Q128,44 124,56'},
+ steps:['Pieds largeur \u00e9paules, pointes l\u00e9g\u00e8rement ouvertes, bras devant pour l\u2019\u00e9quilibre.','Descends en poussant les hanches en arri\u00e8re PUIS en pliant les genoux, dos droit.','Descends jusqu\u2019\u00e0 cuisses parall\u00e8les (ou ta profondeur sans douleur genou).','Pousse dans les talons pour remonter, genoux dans l\u2019axe des pieds.'],
+ breath:'Inspire en descendant, expire en remontant.',
+ errors:['Genoux qui rentrent vers l\u2019int\u00e9rieur \u2014 zone rouge pour ton genou gauche','Talons qui d\u00e9collent','Dos rond en bas'],
+ keys:['Post-blessure : amplitude o\u00f9 z\u00e9ro douleur, elle grandira seule','Tempo 2-1-2 contr\u00f4l\u00e9'],
+ easier:'Squat sur box/chaise',harder:'Squat bulgare \u00b7 pistol progressions'},
+{id:'fente',m:{quads:1,glutes:.7,hams:.4,calves:.3,abs:.3},n:'Fentes',g:'Fente',cat:'legs',mus:'Quadriceps \u00b7 Fessiers \u00b7 \u00c9quilibre',
+ svg:{ghost:{h:[90,24],l:[[90,30,90,64],[90,64,84,105],[90,64,98,105]]},
+  main:{h:[84,38],l:[[84,44,82,72],[82,72,60,84,58,105],[82,72,104,90,118,105]]},
+  arrow:'M120,40 Q124,52 120,62'},
+ steps:['Debout, fais un grand pas en avant.','Descends verticalement : les deux genoux \u00e0 90\u00b0, genou arri\u00e8re fr\u00f4le le sol.','Le genou avant reste au-dessus de la cheville, jamais au-del\u00e0 des orteils.','Pousse sur le talon avant pour revenir, alterne les jambes.'],
+ breath:'Inspire en descendant, expire en remontant.',
+ errors:['Pas trop court (genou qui d\u00e9passe)','Buste pench\u00e9 en avant','Genou avant qui vacille \u2014 signal \u00e0 surveiller sur ton genou gauche'],
+ keys:['L\u2019\u00e9quilibre compte autant que la force \u2014 fixe un point devant toi'],
+ easier:'Fente statique tenue \u00e0 un support',harder:'Fentes march\u00e9es \u00b7 fentes sautees'},
+{id:'course',m:{quads:.7,calves:.7,hams:.6,glutes:.5,abs:.2},n:'Course \u00e0 pied \u2014 technique',g:'Course \u00e0 pied',cat:'legs',mus:'Cardio \u00b7 Cha\u00eene post\u00e9rieure',
+ svg:{main:{h:[92,26],l:[[92,32,96,62],[92,40,74,50],[92,40,112,34],[96,62,78,80,84,100],[96,62,116,78,132,70]]},
+  arrow:'M140,50 L164,50'},
+ steps:['Buste droit, l\u00e9g\u00e8re inclinaison avant depuis les chevilles (pas la taille).','Pose le pied sous ton centre de gravit\u00e9, pas loin devant (\u00e9vite le talon frein).','Cadence \u00e9lev\u00e9e ~170-180 pas/min : des petits pas rapides plut\u00f4t que des grands.','\u00c9paules rel\u00e2ch\u00e9es, bras \u00e0 90\u00b0 qui balancent d\u2019avant en arri\u00e8re.'],
+ breath:'En Z1-Z2 : tu dois pouvoir parler. Sinon, ralentis.',
+ errors:['Overstride (pied loin devant = frein + impact genou)','\u00c9paules crisp\u00e9es aux oreilles','Partir trop vite \u2014 les 5 premi\u00e8res minutes sont TOUJOURS trop lentes exprès'],
+ keys:['Ta Garmin vibre la cadence \u2014 vise 170+','Brooks obligatoires (vo\u00fbte plantaire) \u00b7 le genou d\u00e9cide du volume'],
+ easier:'Marche rapide \u00b7 run/walk',harder:'Volume +10%/sem max'},
+// ── PUSH étendus ──
+{id:'pompes_mur',m:{pecs:1,triceps:.5,delts:.3},n:'Pompes murales',g:'Pompes murales',cat:'push',mus:'Pectoraux · Triceps',svgRef:'pompes_incl',
+ steps:['Face au mur, mains largeur épaules à hauteur de poitrine, pieds à 60-80cm du mur.','Corps gainé, fléchis les coudes pour amener le visage vers le mur.','Pousse pour revenir, coudes à 45°.'],
+ breath:'Inspire en approchant, expire en poussant.',
+ errors:['Hanches cassées en avant','Se contenter d’effleurer — amplitude complète'],
+ keys:['Le point de départ de toute la lignée push — parfait en échauffement ou après pause'],
+ easier:'Se rapprocher du mur',harder:'Pompes inclinées'},
+{id:'pompes_genoux',m:{pecs:1,triceps:.6,delts:.4,abs:.2},n:'Pompes sur genoux',g:'Pompes sur les genoux',cat:'push',mus:'Pectoraux · Triceps',svgRef:'pompes_sol',
+ steps:['Genoux au sol, chevilles croisées, mains largeur épaules sous la poitrine.','Ligne droite genoux-hanches-épaules, descends la poitrine au sol.','Pousse en gardant le gainage.'],
+ breath:'Inspire en bas, expire en poussant.',
+ errors:['Fesses en arrière sur les talons — le corps doit rester incliné','Mains trop en avant'],
+ keys:['Alternative aux inclinées — utile en fin de série quand les complètes ne passent plus'],
+ easier:'Pompes murales',harder:'Pompes au sol'},
+{id:'pompes_larges',m:{pecs:1,delts:.5,triceps:.4},n:'Pompes larges',g:'Pompes prise large',cat:'push',mus:'Pectoraux (externe) · Épaules',svgRef:'pompes_sol',
+ steps:['Mains 1,5× largeur épaules, doigts légèrement ouverts vers l’extérieur.','Descends la poitrine entre les mains, coudes à ~60°.','Pousse en serrant les pecs comme pour rapprocher les mains.'],
+ breath:'Inspire en bas, expire en haut.',
+ errors:['Trop large (épaules en stress)','Amplitude réduite'],
+ keys:['Accent pectoraux externe — en complément, jamais en remplacement de la prise standard'],
+ easier:'Pompes au sol',harder:'Pompes archer'},
+{id:'pompes_archer',m:{pecs:1,triceps:.7,delts:.5,abs:.4},n:'Pompes archer',g:'Pompes archer',cat:'push',mus:'Pectoraux · Triceps (unilatéral)',svgRef:'pompes_sol',
+ steps:['Mains très larges, descends en fléchissant UN bras, l’autre reste tendu sur le côté.','La poitrine descend vers la main fléchie.','Pousse et alterne les côtés.'],
+ breath:'Expire en poussant.',
+ errors:['Hanches qui tournent — le buste reste face au sol','Bras tendu qui plie'],
+ keys:['Le pont vers la pompe à un bras — chaque côté travaille à ~70%'],
+ easier:'Pompes larges',harder:'Pompe à un bras assistée'},
+{id:'pompes_decl',m:{pecs:1,delts:.7,triceps:.6,abs:.4},n:'Pompes déclinées',g:'Pompes déclinées',cat:'push',mus:'Pectoraux sup. · Épaules',svgRef:'pompes_sol',
+ steps:['Pieds surélevés (chaise, lit ~40cm), mains au sol largeur épaules.','Corps gainé aligné, descends le front vers le sol.','Pousse sans casser les hanches.'],
+ breath:'Inspire en bas, expire en haut.',
+ errors:['Hanches qui piquent vers le sol','Tête qui cherche le sol avant la poitrine'],
+ keys:['Cible le haut des pecs — la finition du décolleté d’armure ⚔️'],
+ easier:'Pompes au sol',harder:'Surélévation plus haute → pike'},
+{id:'pompes_pseudo',m:{delts:1,pecs:.6,triceps:.6,abs:.5},n:'Pompes pseudo-planche',g:'Pompes planche',cat:'push',mus:'Épaules ant. · Pecs · Core',svgRef:'pompes_sol',
+ steps:['Position pompe mais mains reculées vers les hanches, doigts vers l’extérieur.','Penche les épaules loin devant les mains.','Descends et pousse en gardant cette avancée d’épaules.'],
+ breath:'Expire en poussant.',
+ errors:['Épaules qui reculent au-dessus des mains (perd tout l’intérêt)','Poignets douloureux — ouvre plus les doigts'],
+ keys:['Fondation de la planche (le vrai boss statique) — force d’épaules spécifique'],
+ easier:'Sur poignées, moins penché',harder:'Reculer encore les mains'},
+{id:'dips_banc',m:{triceps:1,delts:.4,pecs:.3},n:'Dips sur banc',g:'Dips sur banc',cat:'push',mus:'Triceps · Épaules ant.',svgRef:'dips',
+ steps:['Mains au bord d’une chaise/banc derrière toi, jambes tendues devant.','Descends en fléchissant les coudes vers l’arrière jusqu’à 90°.','Pousse fort, épaules basses tout du long.'],
+ breath:'Inspire en bas, expire en haut.',
+ errors:['Fesses loin du banc (stress épaules)','Coudes qui partent sur les côtés'],
+ keys:['Version accessible des dips — jambes fléchies pour alléger, tendues pour durcir'],
+ easier:'Jambes fléchies',harder:'Dips aux barres'},
+{id:'chest_press',m:{pecs:1,triceps:.5,delts:.4},n:'Chest press élastique',g:'Développé avec élastique',cat:'push',mus:'Pectoraux · Triceps',svgRef:'rowing',
+ steps:['Élastique ancré à la porte hauteur poitrine, dos à la porte, une poignée par main.','Un pas devant, poitrine fière, pousse les poignées devant toi bras tendus.','Reviens en 2s en résistant.'],
+ breath:'Expire en poussant.',
+ errors:['Épaules qui s’enroulent en avant en fin de poussée','Buste qui pivote'],
+ keys:['Le push horizontal sans se mettre au sol — utile en circuit et en volume'],
+ easier:'Bande légère',harder:'Bande lourde · unilatéral'},
+{id:'ohp_elast',m:{delts:1,triceps:.6,traps:.3,abs:.3},n:'Overhead press élastique',g:'Développé épaules avec élastique',cat:'push',mus:'Épaules · Triceps',svgRef:'latpull',
+ steps:['Debout sur l’élastique, poignées aux épaules, paumes vers l’avant.','Pousse verticalement jusqu’à bras tendus au-dessus de la tête.','Redescends en 2-3s aux épaules.'],
+ breath:'Expire en poussant vers le haut.',
+ errors:['Cambrure lombaire excessive — serre fessiers et abdos','Pousser devant au lieu de vertical'],
+ keys:['La tête passe légèrement entre les bras en fin de mouvement — épaules 3D'],
+ easier:'Un bras à la fois, bande légère',harder:'Bande lourde · tempo lent'},
+// ── PULL étendus ──
+{id:'rowing_uni',m:{lats:1,biceps:.5,obliques:.4,traps:.4},n:'Rowing unilatéral',g:'Rowing à un bras avec élastique',cat:'pull',mus:'Grand dorsal · Core anti-rotation',svgRef:'rowing',
+ steps:['Élastique ancré, un seul bras, position fente légère.','Tire le coude le long des côtes SANS tourner le buste.','Retour lent, le buste reste carré.'],
+ breath:'Expire en tirant.',
+ errors:['Rotation du tronc pendant le tirage','Épaule qui monte'],
+ keys:['Corrige les asymétries + core anti-rotation gratuit'],
+ easier:'Bande légère',harder:'Bande lourde · pause 2s'},
+{id:'tract_austr',m:{lats:1,biceps:.6,traps:.5,abs:.3},n:'Tractions australiennes',g:'Tractions horizontales',cat:'pull',mus:'Dorsaux · Biceps · Trapèzes',svgRef:'planche',
+ steps:['Sous une table solide (ou barre basse), prise largeur épaules, corps tendu talons au sol.','Tire la poitrine vers le bord en serrant les omoplates.','Redescends bras tendus en contrôlant.'],
+ breath:'Expire en tirant.',
+ errors:['Hanches qui tombent — gainage planche inversée','Demi-amplitude'],
+ keys:['LE chemin vers la traction stricte — plus le corps est horizontal, plus c’est dur'],
+ easier:'Genoux fléchis, buste plus vertical',harder:'Pieds surélevés → tractions négatives'},
+{id:'tract_neg',m:{lats:1,biceps:.7,forearms:.5,traps:.4},n:'Tractions négatives',g:'Tractions négatives',cat:'pull',mus:'Dorsaux · Biceps · Grip',svgRef:'latpull',
+ steps:['Saute (ou monte sur une chaise) pour démarrer menton au-dessus de la barre.','Descends le PLUS LENTEMENT possible : cible 5 secondes.','Repose les pieds, remonte, répète.'],
+ breath:'Expire pendant toute la descente.',
+ errors:['Se lâcher d’un coup sur les épaules (danger) — toujours contrôlé jusqu’en bas','Trop de reps (très éprouvant)'],
+ keys:['La descente lente construit la force de la montée — 3-5 négatives valent une séance'],
+ easier:'Tractions australiennes',harder:'Négatives 8s → traction assistée'},
+{id:'tract_assist',m:{lats:1,biceps:.7,forearms:.4,traps:.4},n:'Tractions assistées élastique',g:'Tractions assistées',cat:'pull',mus:'Dorsaux · Biceps',svgRef:'latpull',
+ steps:['Bande accrochée à la barre, un genou ou pied dans la boucle.','Tire menton au-dessus de la barre, poitrine vers la barre.','Descends en 2-3s bras complètement tendus.'],
+ breath:'Expire en montant.',
+ errors:['Kipping/élan','Amplitude coupée en bas (les bras doivent se tendre)'],
+ keys:['Réduis l’assistance bande par bande — SW 25kg → 15 → 10 → boss lvl 30 sans bande'],
+ easier:'Bande plus forte',harder:'Bande plus fine → stricte'},
+{id:'traction',m:{lats:1,biceps:.7,forearms:.5,traps:.5,abs:.3},n:'Tractions strictes',g:'Tractions',cat:'pull',mus:'Dorsaux · Biceps · Grip',svgRef:'latpull',
+ steps:['Suspendu bras tendus, prise pronation largeur épaules+, épaules engagées (pas relâchées).','Tire les coudes vers le bas, menton au-dessus de la barre.','Descends en 2s jusqu’aux bras tendus.'],
+ breath:'Expire en montant, inspire en bas.',
+ errors:['Demi-répétitions en haut ou en bas','Balancier des jambes','Épaules aux oreilles'],
+ keys:['⚔️ BOSS lvl 30 — le roi du haut du corps. Chaque rep stricte compte double'],
+ easier:'Assistées élastique · négatives',harder:'Lestées · archer'},
+{id:'chinup',m:{biceps:1,lats:.8,forearms:.5},n:'Chin-ups (supination)',g:'Tractions en supination',cat:'pull',mus:'Biceps · Dorsaux',svgRef:'latpull',
+ steps:['Prise paumes vers toi, largeur épaules ou un peu moins.','Tire menton au-dessus de la barre, coudes vers les côtes.','Descente contrôlée complète.'],
+ breath:'Expire en montant.',
+ errors:['Ne pas tendre les bras en bas','Épaules qui haussent'],
+ keys:['Plus facile que la pronation — souvent la première traction débloquée'],
+ easier:'Assistées élastique',harder:'Tractions pronation'},
+{id:'curl_marteau',m:{biceps:1,forearms:.8},n:'Curl marteau élastique',g:'Curl marteau avec élastique',cat:'pull',mus:'Biceps · Brachial · Avant-bras',svgRef:'curl',
+ steps:['Debout sur l’élastique, prise neutre (paumes face à face).','Monte les poignées vers les épaules, coudes fixes.','Descends en 3s.'],
+ breath:'Expire en montant.',
+ errors:['Coudes qui avancent','Poignets cassés'],
+ keys:['La prise neutre épargne les coudes et construit l’avant-bras — utile pour le grip des tractions'],
+ easier:'Bande légère',harder:'Bande lourde · unilatéral'},
+{id:'shrugs',m:{traps:1,forearms:.3},n:'Shrugs élastique',g:'Haussements d’épaules avec élastique',cat:'pull',mus:'Trapèzes supérieurs',svgRef:'curl',
+ steps:['Debout sur l’élastique, bras tendus le long du corps, bande en tension.','Hausse les épaules vers les oreilles le plus haut possible.','Pause 1s en haut, redescends lentement.'],
+ breath:'Expire en haussant.',
+ errors:['Rouler les épaules (inutile et risqué) — mouvement strictement vertical','Plier les coudes'],
+ keys:['Simple et efficace — complète les face pulls pour un cou d’armure'],
+ easier:'Bande légère',harder:'Pause 3s en haut'},
+
+// ── CORE étendus ──
+{id:'planche_bt',m:{abs:1,delts:.5,obliques:.4},n:'Planche bras tendus',g:'Planche haute',cat:'core',mus:'Abdos · Épaules',svgRef:'pompes_sol',
+ steps:['Position haute de pompe : mains sous les épaules, bras tendus.','Corps aligné, fessiers/abdos/cuisses serrés.','Tiens sans bouger, respiration continue.'],
+ breath:'Continue, jamais bloquée.',
+ errors:['Hanches hautes ou basses','Omoplates qui se rejoignent — pousse le sol'],
+ keys:['Plus dure pour les épaules que la planche coudes — variante de la même famille'],
+ easier:'Planche sur coudes',harder:'Lever un pied · shoulder taps'},
+{id:'birddog',m:{lowback:1,abs:.6,glutes:.5},n:'Bird dog',g:'Bird Dog',cat:'core',mus:'Lombaires · Abdos profonds · Équilibre',svgRef:'deadbug',
+ steps:['À quatre pattes, mains sous épaules, genoux sous hanches.','Tends simultanément bras droit et jambe gauche à l’horizontale.','Pause 2s, reviens sans poser, alterne.'],
+ breath:'Expire en tendant.',
+ errors:['Hanches qui basculent — un verre d’eau posé sur tes lombaires ne doit pas tomber','Jambe trop haute (cambrure)'],
+ keys:['Le frère debout du dead bug — stabilité lombaire, parfait post-blessure et échauffement'],
+ easier:'Bras seuls puis jambes seules',harder:'Coude-genou sous le corps entre les reps'},
+{id:'hollow_rocks',m:{abs:1,obliques:.4,quads:.3},n:'Hollow rocks',g:'Hollow Rocks',cat:'core',mus:'Abdos (gainage dynamique)',svgRef:'hollow',
+ steps:['Position hollow body tenue (banane).','Balance-toi d’avant en arrière SANS casser la forme.','Le mouvement vient de l’élan, pas d’un pliage du corps.'],
+ breath:'Respiration courte continue.',
+ errors:['Corps qui se plie/déplie à chaque balancement','Lombaires décollées'],
+ keys:['Si la forme casse → reviens au hollow statique. La forme EST l’exercice'],
+ easier:'Hollow statique',harder:'Rocks + jambes tendues serrées'},
+{id:'crunch',m:{abs:1},n:'Crunch',g:'Crunch',cat:'core',mus:'Grand droit (abdos)',svgRef:'deadbug',
+ steps:['Allongé, genoux fléchis, pieds au sol, mains aux tempes.','Enroule les épaules vers le bassin — le bas du dos reste au sol.','Redescends en 2s sans reposer complètement la tête.'],
+ breath:'Expire en montant.',
+ errors:['Tirer sur la nuque','Monter trop haut (le sit-up complet stresse les lombaires)'],
+ keys:['Amplitude courte volontaire — c’est un enroulé, pas un lever de buste'],
+ easier:'Amplitude réduite',harder:'Crunch lesté · jambes surélevées'},
+{id:'leg_raises',m:{abs:1,quads:.4,obliques:.3},n:'Relevés de jambes allongé',g:'Élévations des jambes',cat:'core',mus:'Abdos inférieurs · Fléchisseurs',svgRef:'hollow',
+ steps:['Allongé, mains sous les fessiers, jambes tendues.','Monte les jambes à 90° puis redescends en 3-4s.','STOP à 2cm du sol, sans poser, et repars.'],
+ breath:'Expire en descendant (le plus dur).',
+ errors:['Lombaires qui décollent en bas — plie les genoux si ça arrive','Vitesse'],
+ keys:['La descente lente est le trésor — précurseur des relevés suspendus et du L-sit'],
+ easier:'Genoux fléchis',harder:'Suspendu à la barre'},
+{id:'lsit_tuck',m:{abs:1,triceps:.5,quads:.4,delts:.3},n:'L-sit tuck (barres)',g:'L-Sit genoux fléchis',cat:'core',mus:'Abdos · Triceps · Épaules',svgRef:'dips',
+ steps:['Sur tes barres de dips, bras tendus, épaules basses.','Monte les genoux à la poitrine et TIENS.','Épaules poussées vers le bas en permanence.'],
+ breath:'Courte et continue.',
+ errors:['Épaules aux oreilles','Genoux qui redescendent — tiens même 3s propres'],
+ keys:['Premier pas vers le L-sit complet (boss lvl 40) — cumule les secondes'],
+ easier:'Un pied posé',harder:'Une jambe tendue → L-sit complet'},
+{id:'mtn_climbers',m:{abs:1,quads:.5,delts:.4,calves:.3},n:'Mountain climbers',g:'Mountain Climber',cat:'core',mus:'Core · Cardio · Épaules',svgRef:'pompes_sol',
+ steps:['Position planche bras tendus.','Ramène un genou vers la poitrine puis alterne en rythme.','Les hanches restent basses, le dos plat.'],
+ breath:'Rythmée sur les jambes.',
+ errors:['Fesses qui montent au ciel','Rebondir sur place sans amplitude'],
+ keys:['Cardio + core en un — parfait en circuit ou MVW'],
+ easier:'Lent, marché',harder:'Rapide 30s · cross-body'},
+{id:'russian_twist',m:{obliques:1,abs:.6},n:'Russian twists',g:'Rotation russe',cat:'core',mus:'Obliques',svgRef:'hollow',
+ steps:['Assis, buste incliné à 45°, pieds décollés (ou posés pour faciliter).','Tourne le buste à droite puis à gauche en touchant le sol des mains.','La rotation vient du tronc, pas des bras.'],
+ breath:'Expire à chaque rotation.',
+ errors:['Dos rond — poitrine fière','Juste balancer les bras sans tourner les épaules'],
+ keys:['Va lentement : 1 rotation propre = 1 rep, pas l’essuie-glace'],
+ easier:'Pieds au sol',harder:'Pieds décollés · lesté (bouteille)'},
+{id:'goodmorning',m:{hams:1,lowback:.7,glutes:.6},n:'Good mornings élastique',g:'Good Morning avec élastique',cat:'core',mus:'Ischios · Lombaires · Fessiers',svgRef:'reversefly',
+ steps:['Debout sur l’élastique, bande derrière la nuque sur les trapèzes (pas le cou).','Genoux souples, penche le buste en poussant les hanches EN ARRIÈRE, dos plat.','Arrête à l’horizontale (ou avant si les ischios tirent), remonte en serrant les fessiers.'],
+ breath:'Inspire en descendant, expire en remontant.',
+ errors:['Dos qui s’arrondit — LE danger, réduis l’amplitude','Plier les genoux (ça devient un squat)'],
+ keys:['Le hinge : le schéma moteur le plus important pour tes lombaires et ta posture de coureur'],
+ easier:'Amplitude réduite, sans élastique',harder:'Bande plus lourde · unijambiste'},
+// ── JAMBES étendus ──
+{id:'squat_sumo',m:{glutes:1,quads:.8,hams:.4},n:'Squat sumo',g:'Squat sumo',cat:'legs',mus:'Fessiers · Adducteurs · Quadriceps',svgRef:'squat',
+ steps:['Pieds très écartés (1,5× épaules), pointes ouvertes à 30-45°.','Descends genoux vers l’extérieur, dans l’axe des pointes.','Pousse au sol et serre les fessiers en haut.'],
+ breath:'Inspire en bas, expire en haut.',
+ errors:['Genoux qui rentrent (encore plus critique ici)','Buste trop penché'],
+ keys:['Accent fessiers/adducteurs — complète le squat classique'],
+ easier:'Amplitude réduite',harder:'Tempo 3-1-3 · sauté'},
+{id:'squat_bulg',m:{quads:1,glutes:.8,hams:.4,abs:.3},n:'Squat bulgare',g:'Squat bulgare',cat:'legs',mus:'Quadriceps · Fessiers (unilatéral)',svgRef:'fente',
+ steps:['Pied arrière posé sur une chaise/banc derrière toi, pied avant à ~60cm.','Descends verticalement, genou arrière vers le sol.','Pousse sur le talon avant, buste droit.'],
+ breath:'Inspire en descendant.',
+ errors:['Pied avant trop près (genou au-delà des orteils)','Appui sur le pied arrière (il ne fait qu’équilibrer)'],
+ keys:['LE développeur de jambes unilatéral — brutal et efficace. Genou gauche : amplitude progressive'],
+ easier:'Fentes',harder:'Tempo lent · sauté'},
+{id:'fente_arr',m:{quads:1,glutes:.8,hams:.4},n:'Fentes arrière',g:'Fente arrière',cat:'legs',mus:'Quadriceps · Fessiers',svgRef:'fente',
+ steps:['Debout, fais un grand pas EN ARRIÈRE.','Descends genou arrière vers le sol, buste droit.','Pousse sur le talon avant pour revenir debout.'],
+ breath:'Inspire en descendant.',
+ errors:['Pas trop court','Genou avant qui vacille'],
+ keys:['Plus douce pour les genoux que la fente avant — ta variante par défaut tant que le gauche se réhabitue'],
+ easier:'Tenir un support',harder:'Fentes marchées · sautées'},
+{id:'calf_raises',m:{calves:1},n:'Calf raises',g:'Élévation des mollets',cat:'legs',mus:'Mollets',svgRef:'squat',
+ steps:['Debout, éventuellement pointes sur une marche pour l’amplitude.','Monte sur les pointes le plus haut possible, pause 1s.','Descends en 3s jusqu’à l’étirement complet.'],
+ breath:'Expire en montant.',
+ errors:['Rebondir','Amplitude réduite en bas'],
+ keys:['Tes amortisseurs de coureur — la descente lente protège tendon d’Achille et voûte plantaire'],
+ easier:'Deux pieds au sol',harder:'Unijambiste · lesté sac à dos'},
+{id:'glute_bridge',m:{glutes:1,hams:.6,lowback:.3},n:'Glute bridge',g:'Pont fessier',cat:'legs',mus:'Fessiers · Ischios',
+ svg:{ghost:{h:[46,92],l:[[54,94,110,94],[110,94,132,76,140,102]]},main:{h:[46,92],l:[[54,94,80,80,110,72],[110,72,128,84,140,102]]},arrow:'M96,92 Q98,82 100,76'},
+ steps:['Allongé sur le dos, genoux fléchis, pieds près des fessiers largeur hanches.','Pousse dans les talons et monte les hanches jusqu’à l’alignement épaules-genoux.','Serre FORT les fessiers 2s en haut, redescends lentement.'],
+ breath:'Expire en montant.',
+ errors:['Pousser avec les lombaires (cambrure) au lieu des fessiers','Amplitude tronquée'],
+ keys:['Le réveil des fessiers — muscle dormant chez tous les sédentaires, moteur du coureur'],
+ easier:'Amplitude réduite',harder:'Unijambiste · pieds surélevés'},
+{id:'sl_bridge',m:{glutes:1,hams:.8,abs:.3},n:'Glute bridge unijambiste',g:'Pont fessier à une jambe',cat:'legs',mus:'Fessiers · Ischios (unilatéral)',svgRef:'glute_bridge',
+ steps:['Position pont, une jambe tendue vers le plafond ou l’horizontale.','Monte les hanches avec la jambe d’appui seule.','Hanches PARALLÈLES au sol — c’est tout l’enjeu.'],
+ breath:'Expire en montant.',
+ errors:['Bassin qui bascule du côté libre','Mi-amplitude'],
+ keys:['Révèle et corrige les asymétries gauche/droite — précieux pour ton genou'],
+ easier:'Pont deux jambes',harder:'Pied d’appui surélevé'},
+{id:'stepup',m:{quads:1,glutes:.8,calves:.3},n:'Step-ups',g:'Montées sur box',cat:'legs',mus:'Quadriceps · Fessiers',svgRef:'fente',
+ steps:['Face à une chaise/marche stable (30-45cm).','Monte en poussant UNIQUEMENT sur la jambe du dessus — l’autre ne pousse pas.','Redescends en 2-3s en contrôlant.'],
+ breath:'Expire en montant.',
+ errors:['Impulsion de la jambe du bas (triche invisible)','Genou qui rentre à la montée'],
+ keys:['Fonctionnel pur : escaliers, rando, trail — et sans impact'],
+ easier:'Marche basse',harder:'Marche haute · lesté'},
+{id:'wallsit',m:{quads:1,glutes:.4,calves:.2},n:'Wall sit',g:'Chaise au mur',cat:'legs',mus:'Quadriceps (isométrie)',svgRef:'squat',
+ steps:['Dos plaqué au mur, descends jusqu’à cuisses horizontales, genoux à 90°.','Genoux au-dessus des chevilles, mains décollées des cuisses.','Tiens en respirant calmement.'],
+ breath:'Continue et calme.',
+ errors:['Mains posées sur les cuisses','Trop haut (facile) ou trop bas (genoux)'],
+ keys:['L’endurance mentale des jambes — le chrono est ton boss ici. Genou : 0 douleur tolérée'],
+ easier:'Position plus haute',harder:'90° strict · une jambe'},
+{id:'squat_saut',m:{quads:1,glutes:.8,calves:.7},n:'Squats sautés',g:'Squat sauté',cat:'legs',mus:'Explosivité jambes',svgRef:'squat',
+ steps:['Squat classique jusqu’à mi-profondeur.','Explose vers le haut en sautant.','Amortis TOUJOURS en fléchissant à la réception, enchaîne.'],
+ breath:'Expire à l’impulsion.',
+ errors:['Réception jambes raides (impact genou/dos)','Genoux qui rentrent à la réception'],
+ keys:['⚠️ Réservé aux semaines Pic quand le genou est validé — jamais en fatigue'],
+ easier:'Squat classique rapide',harder:'Fentes sautées alternées'},
+// ── CARDIO ──
+{id:'corde',m:{calves:1,quads:.4,delts:.3,forearms:.3,abs:.2},n:'Corde à sauter',g:'Corde à sauter',cat:'cardio',mus:'Mollets · Cardio · Coordination',svgRef:'course',
+ steps:['Coudes près du corps, la rotation vient des POIGNETS, pas des épaules.','Saute 2-3cm à peine, sur la pointe des pieds, genoux souples.','Regard devant, buste droit, rythme régulier.'],
+ breath:'Rythmée et régulière.',
+ errors:['Sauter trop haut (épuisant et impacts)','Bras écartés qui moulinent'],
+ keys:['Ton échauffement running parfait et le cardio des jours de pluie — commence par blocs de 30-60s'],
+ easier:'Sauts sans corde',harder:'Alterné · double unders'},
+{id:'jumping_jacks',m:{calves:.7,delts:.5,quads:.4,abs:.2},n:'Jumping jacks',g:'Jumping Jack',cat:'cardio',mus:'Full body cardio',svgRef:'course',
+ steps:['Debout pieds joints, bras le long du corps.','Saute en écartant jambes et bras au-dessus de la tête.','Reviens en sautant, enchaîne en rythme.'],
+ breath:'Rythmée.',
+ errors:['Réception raide','Bras qui ne montent pas complètement'],
+ keys:['L’échauffement full body universel — 30 reps et le corps est chaud'],
+ easier:'Sans saut (step jack)',harder:'Plus vite · plus longtemps'},
+{id:'burpees',m:{pecs:.7,quads:.8,abs:.6,calves:.5,delts:.5},n:'Burpees',g:'Burpee',cat:'cardio',mus:'Full body · Cardio intense',svgRef:'pompes_sol',
+ steps:['Debout → squat, mains au sol → jette les pieds en arrière en planche.','Pompe (optionnelle) → ramène les pieds → saute bras en l’air.','Enchaîne au rythme que tu peux TENIR.'],
+ breath:'Cale-la sur les phases, ne la bloque jamais.',
+ errors:['Dos qui s’effondre au jeté de pieds','Sprint 5 reps puis mort — régularité > vitesse'],
+ keys:['L’exercice le plus détesté et le plus efficace — en semaine Pic uniquement'],
+ easier:'Sans pompe, sans saut (marché)',harder:'Avec pompe · over-the-line'},
+{id:'high_knees',m:{quads:.8,calves:.6,abs:.5},n:'High knees',g:'Montées de genoux',cat:'cardio',mus:'Cardio · Fléchisseurs hanche',svgRef:'course',
+ steps:['Course sur place, genoux montés à hauteur de hanches.','Buste droit, bras qui pompent en rythme.','Contact au sol bref, sur l’avant-pied.'],
+ breath:'Rapide et rythmée.',
+ errors:['Se pencher en arrière','Genoux bas = footing sur place'],
+ keys:['Éducatif de course — améliore ta cadence et ta pose de pied Z2'],
+ easier:'Marché genoux hauts',harder:'30s max effort'}
+
+];
+
+function normS(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+var grimCat='';
+function grimFCat(c){
+  grimCat=c;
+  document.querySelectorAll('#grimCats .cat-c').forEach(function(b){b.classList.toggle('on',b.dataset.c===c);});
+  renderGrimoire();
+}
+function renderGrimoire(){
+  var q=(document.getElementById('grimSearch').value||'');
+  var catL={push:'Push',pull:'Pull',core:'Core',legs:'Jambes',cardio:'Cardio'};
+  document.getElementById('grimList').innerHTML=EXO_DB.filter(function(e){
+    if(grimCat&&e.cat!==grimCat)return false;
+    if(q&&normS(e.n).indexOf(normS(q))<0)return false;
+    return true;
+  }).map(function(e){
+    return '<div class="grim-card" onclick="openFiche(\''+e.id+'\')">'
+      +'<div class="grim-ic" style="font-size:22px">'+({push:'\ud83d\udcaa',pull:'\ud83c\udfcb\ufe0f',core:'\ud83e\uddd8',legs:'\ud83e\uddb5',cardio:'\ud83c\udfc3'}[e.cat]||'\u2694\ufe0f')+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="grim-name">'+e.n+'</div>'
+      +'<div class="grim-muscles">'+e.mus+'</div></div>'
+      +'<span class="grim-cat gc-'+e.cat+'">'+catL[e.cat]+'</span></div>';
+  }).join('')||'<div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Aucune technique trouv\u00e9e</div>';
+  var vis=EXO_DB.filter(function(e){if(grimCat&&e.cat!==grimCat)return false;if(q&&normS(e.n).indexOf(normS(q))<0)return false;return true;}).length;
+  var cnt=document.getElementById('grimCount');if(cnt)cnt.textContent=vis+' technique'+(vis>1?'s':'')+' \u00b7 '+EXO_DB.length+' au grimoire';
+}
+function openFiche(id){
+  var e=EXO_DB.find(function(x){return x.id===id;});
+  if(!e)return;
+  var catL={push:'Push',pull:'Pull',core:'Core',legs:'Jambes',cardio:'Cardio'};
+  var h='<div class="nut-modal-title"><span>'+e.n+'</span><button class="nut-close" onclick="closeFiche()">\u2715</button></div>'
+    +'<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:4px">'
+    +'<span class="grim-cat gc-'+e.cat+'">'+catL[e.cat]+'</span>'
+    +'<span style="font-size:9.5px;color:var(--blue)">\ud83d\udcf1 '+e.g+'</span></div>'
+    +'<div style="font-size:10px;color:var(--muted2)">'+e.mus+'</div>'
+    +'<div class="fiche-sec">\ud83c\udfaf Muscles sollicit\u00e9s</div>'
+    +'<div class="fiche-svg" style="padding:10px 18px">'+bodyMap(e.m)
+    +'<div style="display:flex;gap:14px;justify-content:center;margin-top:6px;font-size:9px;color:var(--muted2)">'
+    +'<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#f87171;vertical-align:middle;margin-right:4px"></span>Primaire</span>'
+    +'<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(251,146,60,.75);vertical-align:middle;margin-right:4px"></span>Secondaire</span>'
+    +'</div></div>'
+    +'<button class="btn" style="width:100%;margin-top:4px;background:linear-gradient(180deg,#e33d2e,#b52619);color:#fff;border:1px solid rgba(255,255,255,.15);font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px" onclick="ytOpen(\''+e.id+'\')"><span style="font-size:15px">\u25b6\ufe0f</span> Voir le mouvement en vid\u00e9o</button>'
+    +'<div class="fiche-sec">\u2694\ufe0f Ex\u00e9cution</div>'
+    +e.steps.map(function(s,i){return '<div class="fiche-step"><span class="fiche-step-n">'+(i+1)+'</span><span>'+s+'</span></div>';}).join('')
+    +'<div class="fiche-key" style="margin-top:4px"><span>\ud83c\udf2c\ufe0f</span><span><i>'+e.breath+'</i></span></div>'
+    +'<div class="fiche-sec">\u26a0\ufe0f Erreurs \u00e0 \u00e9viter</div>'
+    +e.errors.map(function(s){return '<div class="fiche-err"><span style="color:var(--red)">\u2715</span><span>'+s+'</span></div>';}).join('')
+    +'<div class="fiche-sec">\ud83d\udca1 Cl\u00e9s de ma\u00eetrise</div>'
+    +e.keys.map(function(s){return '<div class="fiche-key"><span style="color:var(--gold)">\u2726</span><span>'+s+'</span></div>';}).join('')
+    +'<div class="fiche-sec">\ud83d\udcc8 Progression</div>'
+    +'<div class="fiche-prog">'
+    +'<div><span style="color:var(--green);font-weight:800;font-size:8.5px;text-transform:uppercase;letter-spacing:.5px">Plus facile</span><br>'+e.easier+'</div>'
+    +'<div><span style="color:var(--red);font-weight:800;font-size:8.5px;text-transform:uppercase;letter-spacing:.5px">Plus dur</span><br>'+e.harder+'</div>'
+    +'</div>';
+  document.getElementById('grimFiche').innerHTML=h;
+  document.getElementById('grimModal').classList.add('show');
+}
+function closeFiche(){document.getElementById('grimModal').classList.remove('show');}
+
+// ══════════ VIDÉOS YOUTUBE ══════════
+var YT_QUERIES={
+  planche:'gainage planche technique',
+  planche_bt:'planche haute gainage technique',
+  superman:'exercice superman dos technique',
+  course:'technique course \u00e0 pied foulée cadence',
+  corde:'corde \u00e0 sauter d\u00e9butant technique',
+  pike:'pike push up technique',
+  hollow:'hollow body hold technique',
+  hollow_rocks:'hollow rocks technique',
+  deadbug:'dead bug exercice technique',
+  birddog:'bird dog exercice technique',
+  lsit_tuck:'tuck l-sit barres technique',
+  dips:'dips barres parall\u00e8les technique',
+  dips_banc:'dips banc technique',
+  tract_austr:'tractions australiennes technique',
+  tract_neg:'tractions n\u00e9gatives technique',
+  tract_assist:'tractions \u00e9lastique assist\u00e9es',
+  traction:'tractions pronation technique d\u00e9butant',
+  chinup:'chin up traction supination technique',
+  rowing:'rowing \u00e9lastique technique',
+  rowing_uni:'rowing unilat\u00e9ral \u00e9lastique',
+  latpull:'lat pulldown \u00e9lastique technique',
+  facepull:'face pull \u00e9lastique technique',
+  pullapart:'band pull apart technique',
+  reversefly:'reverse fly \u00e9lastique technique',
+  chest_press:'chest press \u00e9lastique technique',
+  ohp_elast:'d\u00e9velopp\u00e9 \u00e9paules \u00e9lastique technique',
+  goodmorning:'good morning \u00e9lastique technique',
+  squat_saut:'jump squat technique r\u00e9ception',
+  wallsit:'chaise au mur technique',
+  stepup:'step up technique',
+  glute_bridge:'glute bridge pont fessier technique',
+  sl_bridge:'glute bridge une jambe technique',
+  mtn_climbers:'mountain climbers technique',
+  russian_twist:'russian twist technique',
+  leg_raises:'relev\u00e9 de jambes allong\u00e9 technique',
+  high_knees:'mont\u00e9es de genoux technique'
+};
+function ytOpen(id){
+  var e=EXO_DB.find(function(x){return x.id===id;});
+  if(!e)return;
+  var q=YT_QUERIES[id]||(e.n+' technique tuto');
+  window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(q),'_blank');
+}
+function ficheByName(name){
+  var lo=name.toLowerCase().trim();
+  var cands=EXO_DB.slice().sort(function(a,b){return b.n.length-a.n.length;});
+  var e=cands.find(function(x){return x.n.toLowerCase()===lo;});
+  if(!e)e=cands.find(function(x){return lo.indexOf(x.n.toLowerCase())===0;});
+  if(!e)e=cands.find(function(x){return x.n.toLowerCase().indexOf(lo)===0;});
+  if(!e){
+    var w=lo.split(/[ —-]/)[0];
+    if(w.length>3)e=cands.find(function(x){return x.n.toLowerCase().indexOf(w)>=0;});
+  }
+  if(e)openFiche(e.id);
+}
+function normS(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+var grimCat='';
+function grimFCat(c){
+  grimCat=c;
+  document.querySelectorAll('#grimCats .cat-c').forEach(function(b){b.classList.toggle('on',b.dataset.c===c);});
+  renderGrimoire();
+}
+function renderGrimoire(){
+  var q=(document.getElementById('grimSearch').value||'');
+  var catL={push:'Push',pull:'Pull',core:'Core',legs:'Jambes',cardio:'Cardio'};
+  document.getElementById('grimList').innerHTML=EXO_DB.filter(function(e){
+    if(grimCat&&e.cat!==grimCat)return false;
+    if(q&&normS(e.n).indexOf(normS(q))<0)return false;
+    return true;
+  }).map(function(e){
+    return '<div class="grim-card" onclick="openFiche(\''+e.id+'\')">'
+      +'<div class="grim-ic" style="font-size:22px">'+({push:'\ud83d\udcaa',pull:'\ud83c\udfcb\ufe0f',core:'\ud83e\uddd8',legs:'\ud83e\uddb5',cardio:'\ud83c\udfc3'}[e.cat]||'\u2694\ufe0f')+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="grim-name">'+e.n+'</div>'
+      +'<div class="grim-muscles">'+e.mus+'</div></div>'
+      +'<span class="grim-cat gc-'+e.cat+'">'+catL[e.cat]+'</span></div>';
+  }).join('')||'<div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Aucune technique trouv\u00e9e</div>';
+  var vis=EXO_DB.filter(function(e){if(grimCat&&e.cat!==grimCat)return false;if(q&&normS(e.n).indexOf(normS(q))<0)return false;return true;}).length;
+  var cnt=document.getElementById('grimCount');if(cnt)cnt.textContent=vis+' technique'+(vis>1?'s':'')+' \u00b7 '+EXO_DB.length+' au grimoire';
+}
+function openFiche(id){
+  var e=EXO_DB.find(function(x){return x.id===id;});
+  if(!e)return;
+  var catL={push:'Push',pull:'Pull',core:'Core',legs:'Jambes',cardio:'Cardio'};
+  var h='<div class="nut-modal-title"><span>'+e.n+'</span><button class="nut-close" onclick="closeFiche()">\u2715</button></div>'
+    +'<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:4px">'
+    +'<span class="grim-cat gc-'+e.cat+'">'+catL[e.cat]+'</span>'
+    +'<span style="font-size:9.5px;color:var(--blue)">\ud83d\udcf1 '+e.g+'</span></div>'
+    +'<div style="font-size:10px;color:var(--muted2)">'+e.mus+'</div>'
+    +'<div class="fiche-sec">\ud83c\udfaf Muscles sollicit\u00e9s</div>'
+    +'<div class="fiche-svg" style="padding:10px 18px">'+bodyMap(e.m)
+    +'<div style="display:flex;gap:14px;justify-content:center;margin-top:6px;font-size:9px;color:var(--muted2)">'
+    +'<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#f87171;vertical-align:middle;margin-right:4px"></span>Primaire</span>'
+    +'<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(251,146,60,.75);vertical-align:middle;margin-right:4px"></span>Secondaire</span>'
+    +'</div></div>'
+    +'<div class="fiche-sec">\u2694\ufe0f Ex\u00e9cution</div>'
+    +e.steps.map(function(s,i){return '<div class="fiche-step"><span class="fiche-step-n">'+(i+1)+'</span><span>'+s+'</span></div>';}).join('')
+    +'<div class="fiche-key" style="margin-top:4px"><span>\ud83c\udf2c\ufe0f</span><span><i>'+e.breath+'</i></span></div>'
+    +'<div class="fiche-sec">\u26a0\ufe0f Erreurs \u00e0 \u00e9viter</div>'
+    +e.errors.map(function(s){return '<div class="fiche-err"><span style="color:var(--red)">\u2715</span><span>'+s+'</span></div>';}).join('')
+    +'<div class="fiche-sec">\ud83d\udca1 Cl\u00e9s de ma\u00eetrise</div>'
+    +e.keys.map(function(s){return '<div class="fiche-key"><span style="color:var(--gold)">\u2726</span><span>'+s+'</span></div>';}).join('')
+    +'<div class="fiche-sec">\ud83d\udcc8 Progression</div>'
+    +'<div class="fiche-prog">'
+    +'<div><span style="color:var(--green);font-weight:800;font-size:8.5px;text-transform:uppercase;letter-spacing:.5px">Plus facile</span><br>'+e.easier+'</div>'
+    +'<div><span style="color:var(--red);font-weight:800;font-size:8.5px;text-transform:uppercase;letter-spacing:.5px">Plus dur</span><br>'+e.harder+'</div>'
+    +'</div>';
+  document.getElementById('grimFiche').innerHTML=h;
+  document.getElementById('grimModal').classList.add('show');
+}
+function closeFiche(){document.getElementById('grimModal').classList.remove('show');}
+function ficheByName(name){
+  var lo=name.toLowerCase();
+  var e=EXO_DB.find(function(x){return lo.indexOf(x.n.toLowerCase())>=0||x.n.toLowerCase().indexOf(lo)>=0;});
+  if(!e){
+    // matching partiel par mots-clés
+    e=EXO_DB.find(function(x){
+      return lo.split(' ')[0].length>3 && x.n.toLowerCase().indexOf(lo.split(' ')[0])>=0;
+    });
+  }
+  if(e)openFiche(e.id);
+}
+
 // ══════════ SELF-CHECK + INIT ══════════
 function selfCheck(){
   var req=['showTab','getStore','saveStore','renderWeek','renderDash','setDone','saveSet','genBilan','exportData','importProg','grantXp','levelFromXp'];
@@ -2417,6 +3166,15 @@ function selfCheck(){
 }
 document.addEventListener('DOMContentLoaded',function(){
   selfCheck();
+  // Rappel export si >7j sans sauvegarde et données présentes
+  try{
+    var lastExp=+localStorage.getItem('sa_last_export')||0;
+    var hasData=Object.keys(localStorage).some(function(k){return k.indexOf(KEY_PREFIX)===0;});
+    if(hasData&&(!lastExp||Date.now()-lastExp>7*86400000)){
+      setTimeout(function(){toast('\ud83d\udcbe Pense \u00e0 exporter ta sauvegarde (onglet Bilan)');},2500);
+      localStorage.setItem('sa_last_export',Date.now()-6*86400000); // re-rappel dans 24h max
+    }
+  }catch(e){}
   applyProgOverride();
   autoFetchProg();
   renderHeader();

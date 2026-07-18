@@ -1,5 +1,5 @@
-// Sport Ascension — Service Worker v9
-var CACHE = 'ascension-v9';
+// Sport Ascension — Service Worker v18 (network-first pour l'app)
+var CACHE = 'ascension-v18';
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();
@@ -19,13 +19,31 @@ self.addEventListener('activate', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {
-  e.respondWith(
-    caches.match(e.request).then(function(r) {
-      return r || fetch(e.request).then(function(resp) {
+  var url = new URL(e.request.url);
+  var isApp = e.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
+  var isProg = url.pathname.endsWith('/programme.json');
+
+  if (isApp || isProg) {
+    // NETWORK-FIRST : toujours la dernière version en ligne, cache seulement hors-ligne
+    e.respondWith(
+      fetch(e.request).then(function(resp) {
         var clone = resp.clone();
         caches.open(CACHE).then(function(c){ c.put(e.request, clone); });
         return resp;
-      }).catch(function(){ return caches.match('./index.html'); });
-    })
-  );
+      }).catch(function() {
+        return caches.match(e.request).then(function(r){ return r || caches.match('./index.html'); });
+      })
+    );
+  } else {
+    // CACHE-FIRST : icônes, manifest, CDN
+    e.respondWith(
+      caches.match(e.request).then(function(r) {
+        return r || fetch(e.request).then(function(resp) {
+          var clone = resp.clone();
+          caches.open(CACHE).then(function(c){ c.put(e.request, clone); });
+          return resp;
+        }).catch(function(){ return caches.match('./index.html'); });
+      })
+    );
+  }
 });
