@@ -1,11 +1,15 @@
-// Sport Ascension — Service Worker v24 (network-first pour l'app)
-var CACHE = 'ascension-v24';
+// Sport Ascension — Service Worker v25 (network-first pour l'app)
+var CACHE = 'ascension-v25';
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE).then(function(c) {
-      return c.addAll(['./index.html', './manifest.json', './icon-192.png', './icon-512.png']);
+      // add() individuels : un 404 ne bloque plus l'installation du SW
+      return Promise.all(
+        ['./index.html', './manifest.json', './icon192.png', './icon512.png']
+          .map(function(u){ return c.add(u).catch(function(){}); })
+      );
     })
   );
 });
@@ -35,14 +39,17 @@ self.addEventListener('fetch', function(e) {
       })
     );
   } else {
-    // CACHE-FIRST : icônes, manifest, CDN
+    // CACHE-FIRST : icônes, CDN
     e.respondWith(
       caches.match(e.request).then(function(r) {
         return r || fetch(e.request).then(function(resp) {
           var clone = resp.clone();
           caches.open(CACHE).then(function(c){ c.put(e.request, clone); });
           return resp;
-        }).catch(function(){ return caches.match('./index.html'); });
+        }).catch(function(){
+          // ne JAMAIS renvoyer index.html pour un asset (JS/CSS/img) : réponse 504 vide
+          return new Response('', {status: 504, statusText: 'offline'});
+        });
       })
     );
   }

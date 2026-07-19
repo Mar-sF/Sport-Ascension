@@ -52,7 +52,7 @@
     {
      "c": "Circuit A — Pecs focus (70%)",
      "n": "Pompes inclinées",
-     "g": "Pompes inclinées",
+     "g": "Pompes avec mains relevées",
      "t": "3×6",
      "tip": "Surface hauteur hanches. Tempo 2-1-2. En réserve sur chaque série.",
      "sets": 3,
@@ -62,7 +62,7 @@
     {
      "c": "Circuit A — Pecs focus (70%)",
      "n": "Pompes au sol",
-     "g": "Pompes",
+     "g": "Pompe",
      "t": "3×3",
      "tip": "Max actuel 5 — on reste à 3 propres. Forme parfaite uniquement.",
      "sets": 3,
@@ -159,7 +159,7 @@
     {
      "c": "Circuit B — Pecs/Core équilibrage (30%)",
      "n": "Pompes inclinées",
-     "g": "Pompes inclinées",
+     "g": "Pompes avec mains relevées",
      "t": "2×8",
      "tip": "Équilibrage push. Tempo contrôlé.",
      "sets": 2,
@@ -245,7 +245,7 @@
     {
      "c": "Circuit A — Jambes/Push (70%)",
      "n": "Pompes inclinées",
-     "g": "Pompes inclinées",
+     "g": "Pompes avec mains relevées",
      "t": "2×8",
      "tip": "Push horizontal.",
      "sets": 2,
@@ -287,7 +287,7 @@
     {
      "c": "Circuit B — Pull/Core équilibrage (30%)",
      "n": "Superman",
-     "g": "Superman",
+     "g": "Superman au sol",
      "t": "2×12",
      "tip": "Core postérieur — lombaires. Montée lente 2s.",
      "sets": 2,
