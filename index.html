@@ -2515,7 +2515,7 @@ function nutConfirm(){
 }
 
 // ══════════ ESTIMATION NUTRITIONNELLE PAR PHOTO (IA) ══════════
-var aiImgData=null, aiImgMime=null;
+var aiImgData=null, aiImgMime=null, aiLastRaw='';
 function aiShow(step){
   ['aiStep1','aiStep2','aiStep3','aiStepKey'].forEach(function(s){
     document.getElementById(s).style.display = (s===step)?'block':'none';
@@ -2634,7 +2634,7 @@ function aiAnalyze(){
       {inline_data:{mime_type:aiImgMime,data:aiImgData}},
       {text:prompt}
     ]}],
-    generationConfig:{temperature:0.2,maxOutputTokens:600,responseMimeType:"application/json"}
+    generationConfig:{temperature:0.2,maxOutputTokens:2048,responseMimeType:"application/json",thinkingConfig:{thinkingBudget:0}}
   };
   // Modèle déjà validé ? on le met en tête, sinon liste complète
   aiListModels(key).then(function(models){
@@ -2644,17 +2644,28 @@ function aiAnalyze(){
   }).then(function(data){
     if(data.promptFeedback&&data.promptFeedback.blockReason)throw new Error('Image refusée ('+data.promptFeedback.blockReason+')');
     var cand=(data.candidates||[])[0];
-    var txt=cand&&cand.content&&(cand.content.parts||[]).map(function(p){return p.text||'';}).join('')||'';
-    txt=txt.replace(/```json|```/g,'').trim();
-    var m=txt.match(/\{[\s\S]*\}/);
-    if(!m)throw new Error('Réponse illisible');
-    var o=JSON.parse(m[0]);
-    document.getElementById('aiName').value=o.nom||'Plat';
-    document.getElementById('aiQty').value=Math.round(o.portion_g)||100;
-    document.getElementById('aiK100').value=Math.round(o.kcal_100g)||0;
-    document.getElementById('aiP100').value=Math.round((o.prot_100g||0)*10)/10;
-    document.getElementById('aiC100').value=Math.round((o.gluc_100g||0)*10)/10;
-    document.getElementById('aiL100').value=Math.round((o.lip_100g||0)*10)/10;
+    if(!cand)throw new Error('Réponse vide de Gemini');
+    var txt=cand.content&&(cand.content.parts||[]).map(function(p){return p.text||'';}).join('')||'';
+    if(!txt.trim()){
+      if(cand.finishReason==='MAX_TOKENS')throw new Error('Réponse coupée (trop longue) — réessaie');
+      throw new Error('Réponse sans texte ('+(cand.finishReason||'?')+')');
+    }
+    txt=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    var o=null;
+    try{ o=JSON.parse(txt); }catch(e1){
+      var m=txt.match(/\{[\s\S]*\}/);
+      if(m){try{o=JSON.parse(m[0]);}catch(e2){}}
+    }
+    if(!o||typeof o!=='object'){
+      aiLastRaw=txt;
+      throw new Error('JSON non reconnu : '+txt.slice(0,80));
+    }
+    document.getElementById('aiName').value=o.nom||o.name||'Plat';
+    document.getElementById('aiQty').value=Math.round(o.portion_g||o.portion||100)||100;
+    document.getElementById('aiK100').value=Math.round(o.kcal_100g||o.kcal||0)||0;
+    document.getElementById('aiP100').value=Math.round((o.prot_100g||o.prot||0)*10)/10;
+    document.getElementById('aiC100').value=Math.round((o.gluc_100g||o.gluc||0)*10)/10;
+    document.getElementById('aiL100').value=Math.round((o.lip_100g||o.lip||0)*10)/10;
     var sel=document.getElementById('aiMeal');
     sel.innerHTML=NUT_MEALS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(nutSelM||'lunch')?' selected':'')+'>'+m.ic+' '+m.lb+'</option>';}).join('');
     aiShow('aiStep3');aiRecalc();
@@ -2664,7 +2675,7 @@ function aiAnalyze(){
     if(/40[03]|API_KEY|invalid|permission|unregistered|API key/i.test(msg)&&!/quota/i.test(msg)){toast('🔑 Clé refusée — vérifie-la sur AI Studio');localStorage.removeItem('sa_gemini_key');localStorage.removeItem('sa_gemini_models');}
     else if(/429|quota|RESOURCE_EXHAUSTED/i.test(msg))toast('Quota atteint, réessaie plus tard');
     else if(/Aucun modèle/i.test(msg)){toast(msg.slice(0,90));localStorage.removeItem('sa_gemini_models');}
-    else toast('Échec : '+msg.slice(0,80));
+    else toast('Échec : '+msg.slice(0,120));
   });
 }
 function aiRecalc(){
