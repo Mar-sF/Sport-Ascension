@@ -2532,6 +2532,7 @@ function aiSaveKey(){
   var k=(document.getElementById('aiKeyIn').value||'').trim();
   if(!k){toast('Clé vide');return;}
   localStorage.setItem('sa_gemini_key',k);
+  localStorage.removeItem('sa_gemini_model');
   toast('🔑 Clé enregistrée sur cet appareil');
   document.getElementById('aiPhotoInput').click();
 }
@@ -2560,6 +2561,35 @@ function aiPhotoPicked(ev){
   };
   reader.readAsDataURL(file);
 }
+// Résout un modèle Gemini vision disponible pour CETTE clé (évite les 404 de nom de modèle)
+function aiResolveModel(key){
+  var cached=localStorage.getItem('sa_gemini_model');
+  if(cached)return Promise.resolve(cached);
+  return fetch("https://generativelanguage.googleapis.com/v1beta/models",{headers:{"x-goog-api-key":key}})
+    .then(function(r){
+      if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status+' '+t.slice(0,140));});
+      return r.json();
+    }).then(function(data){
+      var models=(data.models||[]).filter(function(m){
+        return (m.supportedGenerationMethods||[]).indexOf('generateContent')>=0;
+      }).map(function(m){return (m.name||'').replace(/^models\//,'');});
+      // Préférence : Flash récent et léger, puis Flash générique, puis n'importe quel modèle vision
+      var pref=[
+        /^gemini-[0-9.]+-flash$/, /^gemini-flash-latest$/,
+        /^gemini-[0-9.]+-flash-lite$/, /flash-lite/, /flash/, /^gemini-[0-9.]+-pro$/, /./
+      ];
+      var chosen=null;
+      for(var i=0;i<pref.length&&!chosen;i++){
+        for(var j=0;j<models.length;j++){
+          if(pref[i].test(models[j])&&!/vision-only|embedding|aqa|imagen/.test(models[j])){chosen=models[j];break;}
+        }
+      }
+      if(!chosen)throw new Error('Aucun modèle compatible pour cette clé');
+      localStorage.setItem('sa_gemini_model',chosen);
+      return chosen;
+    });
+}
+
 function aiAnalyze(){
   if(!aiImgData){toast('Pas de photo');return;}
   var key=(localStorage.getItem('sa_gemini_key')||'').trim();
@@ -2572,7 +2602,8 @@ function aiAnalyze(){
     +'{"nom":"nom court du plat en français","portion_g":nombre estimé de grammes de la portion visible,'
     +'"kcal_100g":nombre,"prot_100g":nombre,"gluc_100g":nombre,"lip_100g":nombre}. '
     +"Les valeurs _100g sont pour 100 grammes de l'aliment. Si l'utilisateur précise un ingrédient (ex : poulet, riz complet, cuisson à l'huile), utilise-le même si la photo ne permet pas de le confirmer. Estime au mieux même si incertain.";
-  fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",{
+  aiResolveModel(key).then(function(model){
+  return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
@@ -2605,12 +2636,18 @@ function aiAnalyze(){
     var sel=document.getElementById('aiMeal');
     sel.innerHTML=NUT_MEALS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(nutSelM||'lunch')?' selected':'')+'>'+m.ic+' '+m.lb+'</option>';}).join('');
     aiShow('aiStep3');aiRecalc();
+  });
   }).catch(function(e){
     aiShow('aiStep1');
     var msg=String(e.message||e);
-    if(/40[03]|API_KEY|invalid|permission|unregistered/i.test(msg)){toast('🔑 Clé refusée — vérifie-la sur AI Studio');localStorage.removeItem('sa_gemini_key');}
+    if(/404|not found|not supported/i.test(msg)){
+      // Le modèle en cache n'est plus valide : on le purge pour re-résoudre au prochain essai
+      localStorage.removeItem('sa_gemini_model');
+      toast('Modèle indisponible, réessaie (nouveau modèle sélectionné)');
+    }
+    else if(/40[03]|API_KEY|invalid|permission|unregistered/i.test(msg)){toast('🔑 Clé refusée — vérifie-la sur AI Studio');localStorage.removeItem('sa_gemini_key');}
     else if(/429|quota|RESOURCE_EXHAUSTED/i.test(msg))toast('Quota atteint, réessaie plus tard');
-    else toast('Échec analyse : '+msg.slice(0,60));
+    else toast('Échec analyse : '+msg.slice(0,70));
   });
 }
 function aiRecalc(){
