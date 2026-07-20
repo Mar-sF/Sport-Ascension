@@ -317,7 +317,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 
 <header>
   <div class="hd-top">
-    <img class="hd-logo" src="./icon192.png" alt="">
+    <img class="hd-logo" src="./icon192.png?v=36" alt="⚔️" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'hd-logo',style:'display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--card2,#1a1a1f)',textContent:'⚔️'}))">
     <div>
       <div class="hd-title">Sport Ascension</div>
       <div class="hd-sub" id="hdSub">Personnage niveau —</div>
@@ -453,6 +453,50 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <div class="card">
     <div style="font-size:10.5px;color:var(--muted2);margin-bottom:9px;line-height:1.5">Scanne le code-barres d'un produit — les macros sont récupérées automatiquement depuis Open Food Facts et pré-remplissent le formulaire ci-dessus.</div>
     <button class="btn btn-out" style="width:100%" onclick="openScanner()">📷 Scanner un code-barres</button>
+    <button class="btn btn-out" style="width:100%;margin-top:8px" onclick="aiPhotoStart()">🍽️ Estimer un plat (photo IA)</button>
+    <input type="file" id="aiPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="aiPhotoPicked(event)">
+  </div>
+</div>
+
+<!-- MODAL PHOTO IA -->
+<div class="nut-modal" id="aiModal" onclick="if(event.target===this)aiClose()">
+  <div class="nut-modal-box">
+    <div class="nut-modal-title"><span>🍽️ Estimation par photo</span><button class="nut-close" onclick="aiClose()">✕</button></div>
+    <div id="aiStep1" style="display:none">
+      <img id="aiPreview" style="width:100%;max-height:38vh;object-fit:contain;border-radius:10px;border:1px solid var(--border2);margin-bottom:10px" alt="">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px">Décris le plat pour aider l'IA : ingrédients, cuisson, portion. Ex : « blanc de poulet grillé, riz basmati, ~300g ». Plus tu précises, meilleure est l'estimation.</div>
+      <textarea class="food-search" id="aiHint" rows="2" style="resize:vertical;font-family:inherit" placeholder="Ex : poulet grillé + riz + brocolis, huile d'olive, grande assiette"></textarea>
+      <button class="btn btn-gold" style="margin-top:10px;width:100%" onclick="aiAnalyze()">🔍 Analyser</button>
+    </div>
+    <div id="aiStep2" style="display:none;text-align:center;padding:24px 0">
+      <div style="font-size:13px;color:var(--muted2)">Analyse en cours…</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">L'IA estime — tu valideras chaque valeur.</div>
+    </div>
+    <div id="aiStep3" style="display:none">
+      <div style="font-size:11px;color:var(--warn,#e0a83a);background:rgba(224,168,58,.12);border-radius:8px;padding:8px;margin-bottom:10px">⚠️ Estimation IA, pas une pesée. Vérifie et corrige, surtout les grammes.</div>
+      <label style="font-size:10px;color:var(--muted2)">Repas</label>
+      <select id="aiMeal" class="food-search" style="margin-bottom:8px;width:100%"></select>
+      <input class="food-search" id="aiName" placeholder="Nom du plat" style="margin-bottom:8px">
+      <div class="qty-row" style="flex-wrap:wrap;gap:6px">
+        <label style="font-size:10px;color:var(--muted2);width:100%">Portion estimée (g)</label>
+        <input class="qty-in" type="number" inputmode="numeric" id="aiQty" oninput="aiRecalc()">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+        <div><label style="font-size:10px;color:var(--muted2)">kcal /100g</label><input class="qty-in" type="number" id="aiK100" oninput="aiRecalc()" style="width:100%"></div>
+        <div><label style="font-size:10px;color:var(--muted2)">Protéines /100g</label><input class="qty-in" type="number" id="aiP100" oninput="aiRecalc()" style="width:100%"></div>
+        <div><label style="font-size:10px;color:var(--muted2)">Glucides /100g</label><input class="qty-in" type="number" id="aiC100" oninput="aiRecalc()" style="width:100%"></div>
+        <div><label style="font-size:10px;color:var(--muted2)">Lipides /100g</label><input class="qty-in" type="number" id="aiL100" oninput="aiRecalc()" style="width:100%"></div>
+      </div>
+      <div class="nut-prev" id="aiPrevBox" style="margin-top:10px"></div>
+      <button class="btn btn-gold" style="margin-top:10px;width:100%" onclick="aiConfirm()">✅ Ajouter au repas</button>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px">Enregistré dans tes aliments perso pour réutilisation.</div>
+    </div>
+    <div id="aiStepKey" style="display:none">
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:8px">Clé API Anthropic requise pour l'analyse photo. Stockée uniquement sur cet appareil.</div>
+      <div style="font-size:10px;color:var(--warn,#e0a83a);background:rgba(224,168,58,.12);border-radius:8px;padding:8px;margin-bottom:10px">⚠️ Une clé dans un navigateur reste sensible. Utilise une clé dédiée, surveille ta conso, révoque-la au moindre doute. Ne partage jamais cette app avec ta clé dedans.</div>
+      <input class="food-search" id="aiKeyIn" placeholder="sk-ant-..." style="margin-bottom:10px">
+      <button class="btn btn-gold" style="width:100%" onclick="aiSaveKey()">Enregistrer la clé</button>
+    </div>
   </div>
 </div>
 
@@ -2467,6 +2511,137 @@ function nutConfirm(){
     toast('\u2705 Ajout\u00e9');
   }
   nutSave();nutCloseModal();renderNutri();
+}
+
+// ══════════ ESTIMATION NUTRITIONNELLE PAR PHOTO (IA) ══════════
+var aiImgData=null, aiImgMime=null;
+function aiShow(step){
+  ['aiStep1','aiStep2','aiStep3','aiStepKey'].forEach(function(s){
+    document.getElementById(s).style.display = (s===step)?'block':'none';
+  });
+  document.getElementById('aiModal').classList.add('show');
+}
+function aiClose(){document.getElementById('aiModal').classList.remove('show');aiImgData=null;aiImgMime=null;}
+function aiHasKey(){return !!(localStorage.getItem('sa_anthropic_key')||'').trim();}
+function aiPhotoStart(){
+  if(!aiHasKey()){nutCloseModal();aiShow('aiStepKey');return;}
+  document.getElementById('aiPhotoInput').click();
+}
+function aiSaveKey(){
+  var k=(document.getElementById('aiKeyIn').value||'').trim();
+  if(!k){toast('Clé vide');return;}
+  localStorage.setItem('sa_anthropic_key',k);
+  toast('🔑 Clé enregistrée sur cet appareil');
+  document.getElementById('aiPhotoInput').click();
+}
+function aiPhotoPicked(ev){
+  var file=ev.target.files&&ev.target.files[0];
+  ev.target.value=''; // permet de reprendre la même photo
+  if(!file)return;
+  nutCloseModal();
+  // Redimensionner côté client pour limiter le poids envoyé (coût + latence)
+  var reader=new FileReader();
+  reader.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var max=1024, w=img.width, h=img.height;
+      if(w>max||h>max){var r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r);}
+      var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      var durl=cv.toDataURL('image/jpeg',0.82);
+      aiImgMime='image/jpeg';
+      aiImgData=durl.split(',')[1];
+      document.getElementById('aiPreview').src=durl;
+      document.getElementById('aiHint').value='';
+      aiShow('aiStep1');
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function aiAnalyze(){
+  if(!aiImgData){toast('Pas de photo');return;}
+  var key=(localStorage.getItem('sa_anthropic_key')||'').trim();
+  if(!key){aiShow('aiStepKey');return;}
+  var hint=(document.getElementById('aiHint').value||'').trim();
+  aiShow('aiStep2');
+  var prompt="Tu es un expert en nutrition. Analyse ce plat à partir de la photo ET de la description fournie par l'utilisateur. "
+    +(hint?("Description de l'utilisateur (fais-lui CONFIANCE en priorité, surtout pour identifier les aliments et la portion — la photo peut être ambiguë) : \""+hint+"\". "):"Aucune description fournie, base-toi uniquement sur la photo. ")
+    +"Réponds UNIQUEMENT avec un objet JSON valide, sans texte ni backticks, au format exact : "
+    +'{"nom":"nom court du plat en français","portion_g":nombre estimé de grammes de la portion visible,'
+    +'"kcal_100g":nombre,"prot_100g":nombre,"gluc_100g":nombre,"lip_100g":nombre}. '
+    +"Les valeurs _100g sont pour 100 grammes de l'aliment. Si l'utilisateur précise un ingrédient (ex : poulet, riz complet, cuisson à l'huile), utilise-le même si la photo ne permet pas de le confirmer. Estime au mieux même si incertain.";
+  fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-api-key":key,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body:JSON.stringify({
+      model:"claude-sonnet-4-6",
+      max_tokens:400,
+      messages:[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:aiImgMime,data:aiImgData}},
+        {type:"text",text:prompt}
+      ]}]
+    })
+  }).then(function(r){
+    if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status+' '+t.slice(0,120));});
+    return r.json();
+  }).then(function(data){
+    var txt=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    txt=txt.replace(/```json|```/g,'').trim();
+    var m=txt.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('Réponse illisible');
+    var o=JSON.parse(m[0]);
+    document.getElementById('aiName').value=o.nom||'Plat';
+    document.getElementById('aiQty').value=Math.round(o.portion_g)||100;
+    document.getElementById('aiK100').value=Math.round(o.kcal_100g)||0;
+    document.getElementById('aiP100').value=Math.round((o.prot_100g||0)*10)/10;
+    document.getElementById('aiC100').value=Math.round((o.gluc_100g||0)*10)/10;
+    document.getElementById('aiL100').value=Math.round((o.lip_100g||0)*10)/10;
+    var sel=document.getElementById('aiMeal');
+    sel.innerHTML=NUT_MEALS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(nutSelM||'lunch')?' selected':'')+'>'+m.ic+' '+m.lb+'</option>';}).join('');
+    aiShow('aiStep3');aiRecalc();
+  }).catch(function(e){
+    aiShow('aiStep1');
+    var msg=String(e.message||e);
+    if(/401|invalid|authentication/i.test(msg)){toast('🔑 Clé refusée — vérifie-la');localStorage.removeItem('sa_anthropic_key');}
+    else if(/429/.test(msg))toast('Trop de requêtes, réessaie');
+    else toast('Échec analyse : '+msg.slice(0,60));
+  });
+}
+function aiRecalc(){
+  var q=+document.getElementById('aiQty').value||0;
+  var k=+document.getElementById('aiK100').value||0;
+  var p=+document.getElementById('aiP100').value||0;
+  var c=+document.getElementById('aiC100').value||0;
+  var l=+document.getElementById('aiL100').value||0;
+  var f=q/100;
+  document.getElementById('aiPrevBox').textContent=
+    Math.round(k*f)+' kcal · P '+Math.round(p*f)+'g · G '+Math.round(c*f)+'g · L '+Math.round(l*f)+'g'
+    +'  ('+q+'g)';
+}
+function aiConfirm(){
+  var name=(document.getElementById('aiName').value||'Plat').trim();
+  var q=+document.getElementById('aiQty').value||100;
+  var food={
+    n:name+' 📷',
+    k:+document.getElementById('aiK100').value||0,
+    p:+document.getElementById('aiP100').value||0,
+    c:+document.getElementById('aiC100').value||0,
+    l:+document.getElementById('aiL100').value||0,
+    por:q, ai:true
+  };
+  nutCustom.push(food);
+  localStorage.setItem('nt_custom',JSON.stringify(nutCustom));
+  var idx=nutAllF().length-1;
+  var mealId=document.getElementById('aiMeal').value||'lunch';
+  nutMeal(nutCurD,mealId).push({idx:idx,n:food.n,qty:q});
+  nutSave();aiClose();renderNutri();
+  toast('✅ '+name+' ajouté ('+q+'g)');
 }
 // ── Base alimentaire ──
 function renderBase(){
