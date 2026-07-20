@@ -7,7 +7,7 @@ self.addEventListener('install', function(e) {
     caches.open(CACHE).then(function(c) {
       // add() individuels : un 404 ne bloque plus l'installation du SW
       return Promise.all(
-        ['./index.html', './manifest.json', './icon192.png', './icon512.png']
+        ['./index.html', './manifest.json', './icon-192.png', './icon-512.png']
           .map(function(u){ return c.add(u).catch(function(){}); })
       );
     })
