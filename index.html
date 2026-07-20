@@ -2533,6 +2533,7 @@ function aiSaveKey(){
   if(!k){toast('Clé vide');return;}
   localStorage.setItem('sa_gemini_key',k);
   localStorage.removeItem('sa_gemini_model');
+  localStorage.removeItem('sa_gemini_models');
   toast('🔑 Clé enregistrée sur cet appareil');
   document.getElementById('aiPhotoInput').click();
 }
@@ -2562,32 +2563,58 @@ function aiPhotoPicked(ev){
   reader.readAsDataURL(file);
 }
 // Résout un modèle Gemini vision disponible pour CETTE clé (évite les 404 de nom de modèle)
-function aiResolveModel(key){
-  var cached=localStorage.getItem('sa_gemini_model');
-  if(cached)return Promise.resolve(cached);
+// Renvoie la liste ordonnée des modèles vision candidats pour CETTE clé
+function aiListModels(key){
+  var cached=localStorage.getItem('sa_gemini_models');
+  if(cached){try{var a=JSON.parse(cached);if(a&&a.length)return Promise.resolve(a);}catch(e){}}
   return fetch("https://generativelanguage.googleapis.com/v1beta/models",{headers:{"x-goog-api-key":key}})
     .then(function(r){
       if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status+' '+t.slice(0,140));});
       return r.json();
     }).then(function(data){
-      var models=(data.models||[]).filter(function(m){
+      var avail=(data.models||[]).filter(function(m){
         return (m.supportedGenerationMethods||[]).indexOf('generateContent')>=0;
       }).map(function(m){return (m.name||'').replace(/^models\//,'');});
-      // Préférence : Flash récent et léger, puis Flash générique, puis n'importe quel modèle vision
-      var pref=[
-        /^gemini-[0-9.]+-flash$/, /^gemini-flash-latest$/,
-        /^gemini-[0-9.]+-flash-lite$/, /flash-lite/, /flash/, /^gemini-[0-9.]+-pro$/, /./
+      var set={}; avail.forEach(function(n){set[n]=1;});
+      // Modèles texte/vision fiables pour l'analyse, par ordre de préférence.
+      // On EXCLUT tout ce qui génère/traite image, audio, vidéo, ou usages spéciaux.
+      var known=[
+        'gemini-2.5-flash','gemini-flash-latest','gemini-2.0-flash',
+        'gemini-2.5-flash-lite','gemini-flash-lite-latest','gemini-2.0-flash-lite',
+        'gemini-3.5-flash','gemini-2.5-pro','gemini-pro-latest'
       ];
-      var chosen=null;
-      for(var i=0;i<pref.length&&!chosen;i++){
-        for(var j=0;j<models.length;j++){
-          if(pref[i].test(models[j])&&!/vision-only|embedding|aqa|imagen/.test(models[j])){chosen=models[j];break;}
-        }
-      }
-      if(!chosen)throw new Error('Aucun modèle compatible pour cette clé');
-      localStorage.setItem('sa_gemini_model',chosen);
+      var chosen=known.filter(function(n){return set[n];});
+      // Repli : tout modèle gemini "flash/pro" restant qui n'est PAS image/tts/audio/etc.
+      var bad=/image|-tts|native-audio|audio|veo|lyria|imagen|robotics|computer-use|embedding|aqa|antigravity|deep-research|omni|customtools/i;
+      avail.forEach(function(n){
+        if(chosen.indexOf(n)<0 && /gemini/.test(n) && /flash|pro/.test(n) && !bad.test(n))chosen.push(n);
+      });
+      if(!chosen.length)throw new Error('Aucun modèle compatible pour cette clé');
+      localStorage.setItem('sa_gemini_models',JSON.stringify(chosen));
       return chosen;
     });
+}
+
+// Essaie generateContent modèle par modèle jusqu'à succès
+function aiCallCascade(key,models,body,idx){
+  idx=idx||0;
+  if(idx>=models.length)return Promise.reject(new Error('Aucun modèle disponible n\'a répondu (essayés : '+models.join(', ')+')'));
+  var model=models[idx];
+  return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-goog-api-key":key},
+    body:JSON.stringify(body)
+  }).then(function(r){
+    if(r.status===404||r.status===400){
+      // modèle inadapté : on passe au suivant
+      return aiCallCascade(key,models,body,idx+1);
+    }
+    if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status+' '+t.slice(0,160));});
+    return r.json().then(function(data){
+      localStorage.setItem('sa_gemini_model',model); // mémorise le gagnant
+      return data;
+    });
+  });
 }
 
 function aiAnalyze(){
@@ -2602,23 +2629,18 @@ function aiAnalyze(){
     +'{"nom":"nom court du plat en français","portion_g":nombre estimé de grammes de la portion visible,'
     +'"kcal_100g":nombre,"prot_100g":nombre,"gluc_100g":nombre,"lip_100g":nombre}. '
     +"Les valeurs _100g sont pour 100 grammes de l'aliment. Si l'utilisateur précise un ingrédient (ex : poulet, riz complet, cuisson à l'huile), utilise-le même si la photo ne permet pas de le confirmer. Estime au mieux même si incertain.";
-  aiResolveModel(key).then(function(model){
-  return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-goog-api-key":key
-    },
-    body:JSON.stringify({
-      contents:[{parts:[
-        {inline_data:{mime_type:aiImgMime,data:aiImgData}},
-        {text:prompt}
-      ]}],
-      generationConfig:{temperature:0.2,maxOutputTokens:600,responseMimeType:"application/json"}
-    })
-  }).then(function(r){
-    if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status+' '+t.slice(0,160));});
-    return r.json();
+  var body={
+    contents:[{parts:[
+      {inline_data:{mime_type:aiImgMime,data:aiImgData}},
+      {text:prompt}
+    ]}],
+    generationConfig:{temperature:0.2,maxOutputTokens:600,responseMimeType:"application/json"}
+  };
+  // Modèle déjà validé ? on le met en tête, sinon liste complète
+  aiListModels(key).then(function(models){
+    var winner=localStorage.getItem('sa_gemini_model');
+    if(winner&&models.indexOf(winner)>0){models=[winner].concat(models.filter(function(x){return x!==winner;}));}
+    return aiCallCascade(key,models,body,0);
   }).then(function(data){
     if(data.promptFeedback&&data.promptFeedback.blockReason)throw new Error('Image refusée ('+data.promptFeedback.blockReason+')');
     var cand=(data.candidates||[])[0];
@@ -2636,18 +2658,13 @@ function aiAnalyze(){
     var sel=document.getElementById('aiMeal');
     sel.innerHTML=NUT_MEALS.map(function(m){return '<option value="'+m.id+'"'+(m.id===(nutSelM||'lunch')?' selected':'')+'>'+m.ic+' '+m.lb+'</option>';}).join('');
     aiShow('aiStep3');aiRecalc();
-  });
   }).catch(function(e){
     aiShow('aiStep1');
     var msg=String(e.message||e);
-    if(/404|not found|not supported/i.test(msg)){
-      // Le modèle en cache n'est plus valide : on le purge pour re-résoudre au prochain essai
-      localStorage.removeItem('sa_gemini_model');
-      toast('Modèle indisponible, réessaie (nouveau modèle sélectionné)');
-    }
-    else if(/40[03]|API_KEY|invalid|permission|unregistered/i.test(msg)){toast('🔑 Clé refusée — vérifie-la sur AI Studio');localStorage.removeItem('sa_gemini_key');}
+    if(/40[03]|API_KEY|invalid|permission|unregistered|API key/i.test(msg)&&!/quota/i.test(msg)){toast('🔑 Clé refusée — vérifie-la sur AI Studio');localStorage.removeItem('sa_gemini_key');localStorage.removeItem('sa_gemini_models');}
     else if(/429|quota|RESOURCE_EXHAUSTED/i.test(msg))toast('Quota atteint, réessaie plus tard');
-    else toast('Échec analyse : '+msg.slice(0,70));
+    else if(/Aucun modèle/i.test(msg)){toast(msg.slice(0,90));localStorage.removeItem('sa_gemini_models');}
+    else toast('Échec : '+msg.slice(0,80));
   });
 }
 function aiRecalc(){
