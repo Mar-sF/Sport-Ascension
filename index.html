@@ -1591,7 +1591,11 @@ function genBilan(){
       if(v.length)t+='  '+exo+' \u2192 '+v.join(' / ')+'\n';
     });
     if(d.elastic){Object.keys(d.elastic).forEach(function(ex){
-      if(d.elastic[ex])t+='  \ud83c\udfaf \u00c9lastique '+ex+' : '+d.elastic[ex]+'\n';
+      if(d.elastic[ex]){
+        var eb=d.elastic[ex],ekg='';
+        for(var zb=0;zb<ELASTIC_BANDS.length;zb++)if(ELASTIC_BANDS[zb].id===eb){ekg=' ('+ELASTIC_BANDS[zb].kg+')';break;}
+        t+='  \ud83c\udfaf \u00c9lastique '+ex+' : '+eb+ekg+'\n';
+      }
     });}
     if(d.notes)t+='Ressenti : '+d.notes+'\n';
     t+='\n';
