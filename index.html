@@ -346,6 +346,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 <!-- ═══ DASHBOARD / PERSONNAGE ═══ -->
 <div id="tab-dash" class="panel active">
   <div id="heroBox"></div>
+  <div id="todayBox"></div>
   <div class="sec">Compétences</div>
   <div class="skill-grid" id="skillGrid"></div>
   <div class="sec">Cette semaine</div>
@@ -538,16 +539,30 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <div class="sec">Muscles travaillés — <span id="scopeLbl2">cette semaine</span></div>
   <div class="chart-card"><div class="cwrap" style="height:240px"><canvas id="cRadar"></canvas></div></div>
   <div class="card" id="muscleBars"></div>
+  <div class="sec">🏆 Mes records</div>
+  <div class="card" id="prWall"></div>
   <div class="sec">Progression hebdomadaire</div>
-  <div class="chart-card"><div class="chart-title">⚖️ Poids (kg)</div><div class="cwrap"><canvas id="cPoids"></canvas></div></div>
+  <div class="chart-card"><div class="chart-title">⚖️ Poids (kg) — <span style="color:#22d3ee">brut</span> vs <span style="color:#e3c26b">tendance</span></div><div class="cwrap"><canvas id="cPoids"></canvas></div></div>
   <div class="chart-card"><div class="chart-title">💪 Pompes sol — max hebdo</div><div class="cwrap"><canvas id="cPompes"></canvas></div></div>
   <div class="chart-card"><div class="chart-title">🧱 Planche — max hebdo (s)</div><div class="cwrap"><canvas id="cPlanche"></canvas></div></div>
   <div class="chart-card"><div class="chart-title">🏃 Course — plus longue sortie (min)</div><div class="cwrap"><canvas id="cCourse"></canvas></div></div>
+  <div class="sec">📊 Charge d'entraînement</div>
+  <div class="chart-card"><div class="chart-title">🏋️ Volume cali — séries/semaine</div><div class="cwrap"><canvas id="cVolCali"></canvas></div></div>
+  <div class="chart-card"><div class="chart-title">🏃 Volume course — min/semaine</div><div class="cwrap"><canvas id="cVolRun"></canvas></div></div>
   <div class="sec">❤️ FC repos (par jour)</div>
   <div class="chart-card"><div class="cwrap"><canvas id="cFc"></canvas></div></div>
   <div class="sec">🍎 Nutrition</div>
   <div class="chart-card"><div class="chart-title">🔥 Calories par jour</div><div class="cwrap"><canvas id="cKcal"></canvas></div></div>
   <div class="chart-card"><div class="chart-title">🥩 Protéines par jour (g)</div><div class="cwrap"><canvas id="cProt"></canvas></div></div>
+  <div class="sec">🌀 Comparaison de cycles</div>
+  <div class="card" style="overflow-x:auto" id="cycleCompare"></div>
+  <div class="sec">📸 Photos de progression</div>
+  <div class="card">
+    <div style="font-size:10.5px;color:var(--muted2);margin-bottom:9px;line-height:1.5">Une photo par mois vaut mieux que la balance : elle montre la recomposition que le poids seul masque. Stockées uniquement sur cet appareil.</div>
+    <input type="file" id="progPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="progPhotoPicked(event)">
+    <button class="btn btn-out" style="width:100%" onclick="document.getElementById('progPhotoInput').click()">📷 Ajouter la photo du mois</button>
+    <div id="progPhotos" style="margin-top:10px"></div>
+  </div>
   <div class="sec">Chronique des semaines</div>
   <div class="card" style="overflow-x:auto"><table class="hist-table" id="histTable"></table></div>
 </div>
@@ -630,7 +645,13 @@ try{ localStorage.getItem('t'); }catch(e){
 </script>
 <script>
 // ══════════ CONFIG ══════════
-var APP_VERSION = 'v3.6';
+var APP_VERSION = 'v3.7';
+// Purge unique du cache de modèle Gemini (bascule vers Flash-Lite, quota plus large)
+if(localStorage.getItem('sa_model_reset')!=='v37'){
+  localStorage.removeItem('sa_gemini_model');
+  localStorage.removeItem('sa_gemini_models');
+  localStorage.setItem('sa_model_reset','v37');
+}
 var KEY_PREFIX = 'sa_';
 var SKILLS = [
   {id:'force', name:'Force',      icon:'\ud83d\udcaa', color:'#f87171', cls:'sk-force'},
@@ -858,6 +879,32 @@ function renderHeader(){
   document.getElementById('hdXp').style.width = Math.round(tot/5*100)+'%';
 }
 
+// Encart "Aujourd'hui" : état de préparation de la séance du jour
+function renderToday(idx){
+  var el=document.getElementById('todayBox'); if(!el)return;
+  if(idx<0){el.innerHTML='';return;}
+  var wOffSave=weekOff; weekOff=0;
+  var s=getStore(); weekOff=wOffSave;
+  var day=s.days[idx], wo=WORKOUTS[day.type]||{isRest:true};
+  if(wo.isRest){el.innerHTML='';return;}
+  var isDone=['yes','mvw','no','rest'].includes(day.done);
+  if(isDone){el.innerHTML='';return;} // déjà traité, le hero suffit
+  var items=[];
+  var sc=drScore(day);
+  if(sc==null)items.push('\u26a0\ufe0f DR check non rempli \u2014 remplis-le pour adapter le volume');
+  else{
+    var dvf=drVolumeFactor(day);
+    if(dvf===0)items.push('\ud83d\uded1 DR bas \u2014 repos conseill\u00e9 aujourd\u2019hui');
+    else if(dvf!=null&&dvf<1)items.push('\u26a1 DR fatigue \u2014 cibles r\u00e9duites \u00d7'+dvf.toFixed(2));
+    else items.push('\u2705 DR OK ('+sc+'/40) \u2014 s\u00e9ance standard');
+  }
+  if(!day.fc)items.push('\u2764\ufe0f FC repos du matin non saisie');
+  el.innerHTML='<div class="card" style="border-color:var(--gold2);margin-top:2px">'
+    +'<div style="font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;font-weight:800;margin-bottom:6px">\u00c0 pr\u00e9parer aujourd\u2019hui</div>'
+    +items.map(function(x){return '<div style="font-size:11.5px;color:var(--text);padding:2px 0">'+x+'</div>';}).join('')
+    +'<button class="btn btn-out" style="width:100%;margin-top:8px" onclick="goToDay('+idx+')">Ouvrir la s\u00e9ance</button>'
+  +'</div>';
+}
 // ══════════ DASHBOARD ══════════
 function renderDash(){
   // Hero séance du jour
@@ -879,6 +926,7 @@ function renderDash(){
       +(!wo.isRest?'<button class="hero-btn" onclick="goToDay('+idx+')">'+(isDone?'Voir':'GO')+'</button>':'')
       +'</div>';
   } else hb.innerHTML='';
+  renderToday(idx);
 
   // Skills mini-cards
   var lv=allLevels(), x=getXp();
@@ -959,7 +1007,28 @@ function savePoids(){
   else toast('\u2696\ufe0f Pes\u00e9e enregistr\u00e9e : '+v+' kg');
   if(newLvl>prevLvl) showLevelUp('shape', newLvl);
   BOSSES.shape.forEach(function(b){ if(b.poids&&v<b.poids) beatBoss('shape', b.id, true); });
+  maybeRecalcGoals(v);
   renderDash(); renderHeader();
+}
+// Recalcul des cibles nutrition quand le poids a bougé de >1 kg vs dernier calcul
+function maybeRecalcGoals(v){
+  var base=parseFloat(localStorage.getItem('sa_goals_weight'));
+  if(!base){localStorage.setItem('sa_goals_weight',v);return;} // 1re pesée : mémorise sans déranger
+  if(Math.abs(v-base)<1)return;
+  // Mifflin-St Jeor, homme 34 ans 182 cm, activité modérée (5 séances), déficit cut ~20%
+  var bmr=10*v+6.25*182-5*34+5;
+  var tdee=bmr*1.55;
+  var kcal=Math.round((tdee*0.80)/10)*10;
+  var prot=Math.round(v*2.0);       // 2 g/kg pour préserver le muscle en cut
+  var fat=Math.round(v*0.9);        // ~0.9 g/kg
+  var carb=Math.round((kcal-prot*4-fat*9)/4);
+  var water=Math.round(v*35/100)*100; // ~35 ml/kg
+  if(!confirm('Ton poids a chang\u00e9 de '+Math.round(Math.abs(v-base)*10)/10+' kg depuis le dernier calcul.\n\nRecalculer tes cibles nutrition ?\n\nNouvelles cibles (cut) :\n'+kcal+' kcal \u00b7 P '+prot+'g \u00b7 G '+carb+'g \u00b7 L '+fat+'g \u00b7 Eau '+(water/1000).toFixed(1)+'L'))
+    {localStorage.setItem('sa_goals_weight',v);return;} // refus : on mémorise pour ne pas re-demander en boucle
+  nutGoals={kcal:kcal,prot:prot,carb:carb,fat:fat,water:water};
+  localStorage.setItem('nt_goals',JSON.stringify(nutGoals));
+  localStorage.setItem('sa_goals_weight',v);
+  toast('\ud83c\udf4e Cibles recalcul\u00e9es pour '+v+' kg');
 }
 
 function goToDay(idx){
@@ -973,6 +1042,31 @@ function goNow(){ weekOff=0; renderWeek(); }
 function chWeek(d){ weekOff+=d; renderWeek(); }
 
 // ══════════ SEMAINE / QUÊTES ══════════
+function overloadWarning(){
+  // Compare le volume prescrit de la semaine courante au réalisé de la précédente
+  if(weekOff!==0)return '';
+  var curSeries=0;
+  Object.keys(WORKOUTS).forEach(function(t){
+    var wo=WORKOUTS[t]; if(!wo||!wo.exos)return;
+    wo.exos.forEach(function(e){ if(e.sets)curSeries+=e.sets; });
+  });
+  var prevSeries=0;
+  try{
+    var ps=JSON.parse(localStorage.getItem(KEY_PREFIX+getKey(-1))||'null');
+    if(ps&&ps.days){ps.days.forEach(function(d){
+      Object.keys(d.sets||{}).forEach(function(exo){ (d.sets[exo]||[]).forEach(function(v){ if(+v>0)prevSeries++; }); });
+    });}
+  }catch(e){}
+  if(!prevSeries||!curSeries)return '';
+  var jump=(curSeries-prevSeries)/prevSeries*100;
+  // Reprise post-genou : seuil prudent à +12%
+  if(jump>12){
+    return '<div class="dr-banner" style="border-color:var(--orange);margin-bottom:10px"><span class="ic">\u26a0\ufe0f</span><span>'
+      +'<b style="color:var(--orange)">Charge +'+Math.round(jump)+'%</b> vs semaine derni\u00e8re ('+prevSeries+'\u2192'+curSeries+' s\u00e9ries). '
+      +'En reprise, la r\u00e8gle est +5-10%. V\u00e9rifie que ce saut est voulu \u2014 sinon r\u00e9duis le volume.</span></div>';
+  }
+  return '';
+}
 function renderWeek(){
   var dates=getDates(weekOff);
   var lbl=fmtD(dates[0])+' \u2014 '+fmtD(dates[6])+(weekOff===0?' (cette semaine)':'');
@@ -983,7 +1077,7 @@ function renderWeek(){
   var todayStr=new Date().toDateString();
   var stL={yes:'\u2713 Fait',mvw:'\u26a1 MVW',no:'\u2717 Skip',rest:'\ud83d\ude34 Repos','':'Planifi\u00e9e'};
   var stC={yes:'st-yes',mvw:'st-mvw',no:'st-no',rest:'st-rest','':'st-planned'};
-  document.getElementById('daysList').innerHTML = s.days.map(function(day,i){
+  document.getElementById('daysList').innerHTML = (weekOff===0?fcAlert():'') + overloadWarning() + s.days.map(function(day,i){
     var wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
     var isToday=dates[i].toDateString()===todayStr;
     var isPast=dates[i]<today&&!isToday;
@@ -1052,6 +1146,37 @@ function drVerdict(sc){
   if(sc>=12)return{ic:'\ud83c\udd98',txt:'MVW 15 min recommand\u00e9',col:'var(--orange)'};
   return{ic:'\ud83d\uded1',txt:'Repos forc\u00e9',col:'var(--red)'};
 }
+function kneeWatchActive(){
+  return new Date() < new Date(2026,8,1); // avant le 1er septembre 2026
+}
+// Facteur de volume issu du DR score (null = DR non rempli, pas d'ajustement)
+function drVolumeFactor(day){
+  var sc=drScore(day);
+  if(sc==null)return null;
+  if(sc>=35)return 1.10;
+  if(sc>=28)return 1.00;
+  if(sc>=20)return 0.80;
+  if(sc>=12)return null; // MVW recommandé — on n'ajuste pas les reps, on suggère MVW
+  return 0; // repos forcé
+}
+// Ajuste une cible texte "3×8", "4×12", "40s", "5 km" selon le facteur
+function adjustTarget(t,f){
+  if(f==null||f===1)return {txt:t,changed:false};
+  var m=String(t).match(/^(\d+)\s*[×x]\s*(\d+)/);
+  if(m){
+    var sets=+m[1], reps=+m[2];
+    // on réduit d'abord les reps, plancher à 1 série
+    var nreps=Math.max(1,Math.round(reps*f));
+    return {txt:sets+'×'+nreps+' \u00b7 ('+t+')',changed:nreps!==reps};
+  }
+  var sec=String(t).match(/^(\d+)\s*s$/);
+  if(sec){var ns=Math.max(5,Math.round(+sec[1]*f));return {txt:ns+'s \u00b7 ('+t+')',changed:ns!==+sec[1]};}
+  var km=String(t).match(/^([\d.]+)\s*km$/);
+  if(km){var nk=Math.round(+km[1]*f*10)/10;return {txt:nk+' km \u00b7 ('+t+')',changed:nk!==+km[1]};}
+  var mn=String(t).match(/^(\d+)\s*min$/);
+  if(mn){var nm=Math.round(+mn[1]*f);return {txt:nm+' min \u00b7 ('+t+')',changed:nm!==+mn[1]};}
+  return {txt:t,changed:false};
+}
 function dayBody(day,i,wo){
   var sub = subTabState[i]||'prog';
   var h='<div class="sub-tabs">'
@@ -1062,7 +1187,20 @@ function dayBody(day,i,wo){
   // ── VUE PROGRAMME ──
   h+='<div id="sub-prog-'+i+'" style="display:'+(sub==='prog'?'block':'none')+'">';
   var sc=drScore(day), v=drVerdict(sc);
-  if(v)h+='<div class="dr-banner" style="border-color:'+v.col+'"><span class="ic">'+v.ic+'</span><span><b style="color:'+v.col+'">Score '+sc+'/40</b> \u00b7 '+v.txt+'</span></div>';
+  if(v){
+    var dvf2=drVolumeFactor(day);
+    var extra='';
+    if(dvf2!=null&&dvf2!==1&&dvf2>0&&!wo.isRest)extra=' \u2014 <b>cibles ajust\u00e9es \u00d7'+dvf2.toFixed(2)+'</b> ci-dessous';
+    else if(dvf2===0)extra=' \u2014 <b>repos conseill\u00e9 aujourd\u2019hui</b>';
+    h+='<div class="dr-banner" style="border-color:'+v.col+'"><span class="ic">'+v.ic+'</span><span><b style="color:'+v.col+'">Score '+sc+'/40</b> \u00b7 '+v.txt+extra+'</span></div>';
+  }
+  // Rappel genou : jusqu'au 31/08/2026, sur les séances avec charge jambe
+  if(kneeWatchActive()){
+    var hasLegs=(wo.exos||[]).some(function(e){return e.type==='legs'||/squat|fente|lunge|mollet|calf|jambe/i.test(e.n||'');});
+    if(hasLegs||wo.xpSkill==='endur'){
+      h+='<div class="dr-banner" style="border-color:var(--orange)"><span class="ic">\ud83e\uddb5</span><span><b style="color:var(--orange)">Genou gauche</b> \u00b7 z\u00e9ro douleur tol\u00e9r\u00e9e. Amplitude progressive, fentes arri\u00e8re par d\u00e9faut. Stop imm\u00e9diat si g\u00eane.</span></div>';
+    }
+  }
   var badges='';
   if(wo.dur)badges+='<span class="wo-badge">\u23f1\ufe0f '+wo.dur+'</span>';
   if(wo.horaire)badges+='<span class="wo-badge">\ud83d\udd52 '+wo.horaire+'</span>';
@@ -1087,10 +1225,16 @@ function dayBody(day,i,wo){
         +'</div>';
       lastC=e.c;num=0;}
     num++;
+    var tgt=e.t, tgtStyle='';
+    var dvf=drVolumeFactor(day);
+    if(e.sets&&dvf!=null&&dvf!==1&&dvf>0){
+      var adj=adjustTarget(e.t,dvf);
+      if(adj.changed){tgt='\u26a1 '+adj.txt; tgtStyle='color:var(--orange);font-weight:700';}
+    }
     h+='<div class="prog-exo"><div class="prog-num">'+num+'</div><div>'
       +'<div class="prog-exo-name exo-link" onclick="ficheByName(\''+e.n.replace(/'/g,"\\'")+'\')">'+e.n+' <span style="font-size:9px;opacity:.6">\ud83d\udcd6</span></div>'
       +'<div class="prog-exo-garmin">\ud83d\udcf1 <b style="color:var(--gold)">\u00ab '+e.g+' \u00bb</b></div>'
-      +'<div class="prog-exo-target">Cible : '+e.t+(e.band?' \u00b7 \ud83c\udfaf \u00c9lastique '+e.band+(function(){for(var z=0;z<ELASTIC_BANDS.length;z++)if(ELASTIC_BANDS[z].id===e.band)return' ('+ELASTIC_BANDS[z].kg+')';return'';})():'')+'</div>'
+      +'<div class="prog-exo-target"'+(tgtStyle?' style="'+tgtStyle+'"':'')+'>Cible : '+tgt+(e.band?' \u00b7 \ud83c\udfaf \u00c9lastique '+e.band+(function(){for(var z=0;z<ELASTIC_BANDS.length;z++)if(ELASTIC_BANDS[z].id===e.band)return' ('+ELASTIC_BANDS[z].kg+')';return'';})():'')+'</div>'
       +(e.tip?'<div class="prog-exo-tip">\ud83d\udca1 '+e.tip+'</div>':'')
       +'</div></div>';
   });
@@ -1718,10 +1862,12 @@ function renderJournal(){
 
 // ══════════ EXPORT / IMPORT / PROGRAMME ══════════
 function exportData(){
-  var data={app:'SportAscension',version:1,exportedAt:new Date().toISOString(),keys:{}};
+  var data={app:'SportAscension',version:2,exportedAt:new Date().toISOString(),keys:{}};
   for(var i=0;i<localStorage.length;i++){
     var k=localStorage.key(i);
-    if(k&&k.indexOf('sa_')===0)data.keys[k]=localStorage.getItem(k);
+    if(!k)continue;
+    if(k==='sa_gemini_key')continue; // ne jamais exporter la clé API secrète
+    if(k.indexOf('sa_')===0||k.indexOf('nt_')===0)data.keys[k]=localStorage.getItem(k);
   }
   var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   var a=document.createElement('a');
@@ -1730,7 +1876,7 @@ function exportData(){
   a.download='ascension_backup_'+d.getFullYear()+pd(d.getMonth()+1)+pd(d.getDate())+'.json';
   a.click();URL.revokeObjectURL(a.href);
   localStorage.setItem('sa_last_export',Date.now());
-  toast('\ud83d\udcbe Sauvegarde export\u00e9e');
+  toast('\ud83d\udcbe Sauvegarde export\u00e9e (entra\u00eenement + nutrition)');
 }
 function importData(ev){
   var f=ev.target.files[0]; if(!f)return;
@@ -1740,7 +1886,7 @@ function importData(ev){
       var data=JSON.parse(e.target.result);
       if(!data.keys||data.app!=='SportAscension'){toast('\u26a0\ufe0f Fichier invalide');return;}
       var n=0;
-      Object.keys(data.keys).forEach(function(k){if(k.indexOf('sa_')===0){localStorage.setItem(k,data.keys[k]);n++;}});
+      Object.keys(data.keys).forEach(function(k){if(k.indexOf('sa_')===0||k.indexOf('nt_')===0){localStorage.setItem(k,data.keys[k]);n++;}});
       toast('\u2705 '+n+' entr\u00e9es restaur\u00e9es');
       setTimeout(function(){location.reload();},700);
     }catch(er){toast('\u26a0\ufe0f Erreur de lecture');}
@@ -1896,12 +2042,33 @@ function getDailyFc(){
   });
   return out;
 }
+// Alerte surentraînement : FC repos récente vs ligne de base
+function fcAlert(){
+  var fc=getDailyFc();
+  if(fc.length<6)return ''; // pas assez de données pour une ligne de base fiable
+  var vals=fc.map(function(x){return x.v;});
+  var recent=vals.slice(-3);
+  var base=vals.slice(0,-3);
+  var baseAvg=base.reduce(function(a,b){return a+b;},0)/base.length;
+  var recentAvg=recent.reduce(function(a,b){return a+b;},0)/recent.length;
+  var delta=recentAvg-baseAvg;
+  // +5 bpm soutenu sur 3 mesures = signal de fatigue/récup incomplète
+  if(delta>=5){
+    return '<div class="dr-banner" style="border-color:var(--orange);margin-bottom:10px"><span class="ic">\u2764\ufe0f</span><span>'
+      +'<b style="color:var(--orange)">FC repos +'+Math.round(delta)+' bpm</b> sur tes 3 derni\u00e8res mesures ('+Math.round(recentAvg)+' vs base '+Math.round(baseAvg)+'). '
+      +'Signal classique de r\u00e9cup\u00e9ration incompl\u00e8te \u2014 privil\u00e9gie le sommeil et n\u2019augmente pas le volume cette semaine.</span></div>';
+  }
+  return '';
+}
 function mkLine(id,labels,data,color,opts){
   if(typeof Chart==='undefined')return;
   var el=document.getElementById(id); if(!el)return;
   if(chartInstances[id]){chartInstances[id].destroy();}
   opts=opts||{};
   var ds=[{data:data,borderColor:color,backgroundColor:color+'20',pointBackgroundColor:color,pointRadius:3,tension:.35,spanGaps:true,borderWidth:2,fill:true}];
+  if(opts.trend){
+    ds.push({data:opts.trend,borderColor:'#e3c26b',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.4,spanGaps:true,fill:false});
+  }
   if(opts.refLine!=null){
     ds.push({data:labels.map(function(){return opts.refLine;}),borderColor:'rgba(227,194,107,.4)',pointRadius:0,borderWidth:1.5,borderDash:[6,4]});
   }
@@ -1911,6 +2078,180 @@ function mkLine(id,labels,data,color,opts){
       scales:{x:{ticks:{color:'#6b6880',font:{size:8}},grid:{color:'rgba(255,255,255,.03)'}},
         y:{min:opts.min,max:opts.max,ticks:{color:'#6b6880',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}}}}});
 }
+function movingAvg(arr,win){
+  // moyenne mobile centrée sur les valeurs non-nulles, tolère les trous
+  return arr.map(function(_,i){
+    var s=0,n=0;
+    for(var j=Math.max(0,i-win+1);j<=i;j++){
+      if(arr[j]!=null&&!isNaN(arr[j])){s+=arr[j];n++;}
+    }
+    return n?Math.round(s/n*10)/10:null;
+  });
+}
+function getWeeklyVolume(){
+  var out=[];
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
+    var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
+    try{
+      var s=JSON.parse(localStorage.getItem(k)); if(!s.days)continue;
+      var series=0,runMin=0;
+      s.days.forEach(function(d){
+        Object.keys(d.sets||{}).forEach(function(exo){
+          (d.sets[exo]||[]).forEach(function(v){ if(+v>0)series++; });
+        });
+        if(d.run&&+d.run.dur)runMin+=+d.run.dur;
+      });
+      var mo=Math.floor(dn/100)%100,da=dn%100;
+      out.push({key:dn,lbl:pd(da)+'/'+pd(mo),series:series,runMin:runMin});
+    }catch(e){}
+  }
+  out.sort(function(a,b){return a.key-b.key;});
+  return out;
+}
+// Mur de records : meilleure perf all-time par exercice suivi
+function renderPRWall(){
+  var el=document.getElementById('prWall'); if(!el)return;
+  var best={}; // nom -> {val, unit, date}
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
+    var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
+    try{
+      var s=JSON.parse(localStorage.getItem(k)); if(!s.days)continue;
+      var mo=Math.floor(dn/100)%100,da=dn%100,dlbl=pd(da)+'/'+pd(mo);
+      s.days.forEach(function(d){
+        Object.keys(d.sets||{}).forEach(function(exo){
+          var isTime=/planche|gainage|l-sit|hollow|chaise|superman/i.test(exo);
+          (d.sets[exo]||[]).forEach(function(v){
+            v=+v; if(!v)return;
+            if(!best[exo]||v>best[exo].val)best[exo]={val:v,unit:isTime?'s':'reps',date:dlbl};
+          });
+        });
+        // course : plus longue sortie
+        if(d.run&&+d.run.dur){
+          var rv=+d.run.dur;
+          if(!best['\ud83c\udfc3 Course (min)']||rv>best['\ud83c\udfc3 Course (min)'].val)best['\ud83c\udfc3 Course (min)']={val:rv,unit:'min',date:dlbl};
+        }
+      });
+    }catch(e){}
+  }
+  var keys=Object.keys(best);
+  if(!keys.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">Tes records s\u2019afficheront d\u00e8s tes premi\u00e8res s\u00e9ries saisies.</div>';return;}
+  // trier : course d'abord, puis par valeur décroissante
+  keys.sort(function(a,b){return best[b].val-best[a].val;});
+  el.innerHTML=keys.map(function(n){
+    var b=best[n];
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2)">'
+      +'<div style="font-size:20px">\ud83c\udfc6</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(n)+'</div>'
+      +'<div style="font-size:9px;color:var(--muted)">le '+b.date+'</div></div>'
+      +'<div style="font-family:\'Space Mono\',monospace;font-size:16px;font-weight:700;color:var(--gold)">'+b.val+'<span style="font-size:10px;color:var(--muted2)"> '+b.unit+'</span></div>'
+    +'</div>';
+  }).join('');
+}
+// Comparaison de cycles : agrège les semaines par cycle de 4
+function renderCycleCompare(){
+  var el=document.getElementById('cycleCompare'); if(!el)return;
+  var start=getCycleStart();
+  var sd=new Date(start.slice(0,4),start.slice(4,6)-1,start.slice(6,8));
+  var w=getWeekStats(), vol=getWeeklyVolume();
+  var volMap={}; vol.forEach(function(x){volMap[x.key]=x;});
+  var cycles={};
+  w.forEach(function(x){
+    var y=Math.floor(x.key/10000),mo=Math.floor(x.key/100)%100,da=x.key%100;
+    var mon=new Date(y,mo-1,da);
+    var diff=Math.round((mon-sd)/(7*86400000));
+    if(diff<0)return;
+    var cn=Math.floor(diff/4)+1;
+    if(!cycles[cn])cycles[cn]={n:cn,weeks:0,series:0,runMin:0,quests:0,poidsFirst:null,poidsLast:null,pompes:0,planche:0,runMax:0};
+    var c=cycles[cn];
+    c.weeks++;
+    c.quests+=x.done+(x.mvw||0);
+    if(x.pompes>c.pompes)c.pompes=x.pompes;
+    if(x.planche>c.planche)c.planche=x.planche;
+    if(x.runMax>c.runMax)c.runMax=x.runMax;
+    if(x.poids!=null){if(c.poidsFirst==null)c.poidsFirst=x.poids;c.poidsLast=x.poids;}
+    var v=volMap[x.key]; if(v){c.series+=v.series;c.runMin+=v.runMin;}
+  });
+  var ids=Object.keys(cycles).map(Number).sort(function(a,b){return a-b;});
+  if(!ids.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">Le r\u00e9cap appara\u00eetra \u00e0 la fin de ton premier cycle.</div>';return;}
+  var rows='<tr><th>Cycle</th><th>Sem.</th><th>Séries</th><th>Course</th><th>Quêtes</th><th>Pompes</th><th>Planche</th><th>Poids</th></tr>';
+  ids.forEach(function(id){
+    var c=cycles[id];
+    var dp=(c.poidsFirst!=null&&c.poidsLast!=null)?(c.poidsLast-c.poidsFirst):null;
+    rows+='<tr><td><b>C'+c.n+'</b></td><td>'+c.weeks+'/4</td><td>'+c.series+'</td><td>'+c.runMin+'min</td><td>'+c.quests+'</td><td>'+(c.pompes||'\u2014')+'</td><td>'+(c.planche?c.planche+'s':'\u2014')+'</td><td>'+(dp!=null?(dp>0?'+':'')+Math.round(dp*10)/10+'kg':'\u2014')+'</td></tr>';
+  });
+  var html='<table class="hist-table">'+rows+'</table>';
+  // Message de spirale : compare le dernier cycle complet au précédent
+  if(ids.length>=2){
+    var last=cycles[ids[ids.length-1]], prev=cycles[ids[ids.length-2]];
+    var msgs=[];
+    if(last.pompes&&prev.pompes)msgs.push('Pompes '+(last.pompes>=prev.pompes?'\u2197 +'+(last.pompes-prev.pompes):'\u2198 '+(last.pompes-prev.pompes)));
+    if(last.planche&&prev.planche)msgs.push('Planche '+(last.planche>=prev.planche?'\u2197 +'+(last.planche-prev.planche)+'s':'\u2198 '+(last.planche-prev.planche)+'s'));
+    if(last.runMax&&prev.runMax)msgs.push('Course '+(last.runMax>=prev.runMax?'\u2197 +'+(last.runMax-prev.runMax)+'min':'\u2198 '+(last.runMax-prev.runMax)+'min'));
+    if(msgs.length)html+='<div style="font-size:10.5px;color:var(--gold2);margin-top:8px;line-height:1.5">\ud83c\udf00 Spirale C'+prev.n+'\u2192C'+last.n+' : '+msgs.join(' \u00b7 ')+'</div>';
+  }
+  el.innerHTML=html;
+}
+// ══════════ PHOTOS DE PROGRESSION ══════════
+function progPhotosGet(){try{return JSON.parse(localStorage.getItem('sa_prog_photos')||'[]');}catch(e){return [];}}
+function progPhotoPicked(ev){
+  var file=ev.target.files&&ev.target.files[0];
+  ev.target.value='';
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var max=640,w=img.width,h=img.height;
+      if(w>max||h>max){var r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r);}
+      var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      var durl=cv.toDataURL('image/jpeg',0.7);
+      var arr=progPhotosGet();
+      var d=new Date();
+      arr.push({date:d.getFullYear()+'-'+pd(d.getMonth()+1)+'-'+pd(d.getDate()),poids:getPoids(),img:durl});
+      try{
+        localStorage.setItem('sa_prog_photos',JSON.stringify(arr));
+        toast('\ud83d\udcf8 Photo du mois enregistr\u00e9e');
+        renderProgPhotos();
+      }catch(e){toast('\u26a0\ufe0f Stockage plein \u2014 supprime d\u2019anciennes photos');}
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function progPhotoDel(i){
+  if(!confirm('Supprimer cette photo de progression ?'))return;
+  var arr=progPhotosGet();arr.splice(i,1);
+  localStorage.setItem('sa_prog_photos',JSON.stringify(arr));
+  renderProgPhotos();
+}
+function renderProgPhotos(){
+  var el=document.getElementById('progPhotos'); if(!el)return;
+  var arr=progPhotosGet();
+  if(!arr.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:6px">Aucune photo pour l\u2019instant.</div>';return;}
+  // avant/après : première et dernière côte à côte si ≥2
+  var h='';
+  if(arr.length>=2){
+    var a=arr[0],b=arr[arr.length-1];
+    h+='<div style="display:flex;gap:6px;margin-bottom:10px">'
+      +['<div style="flex:1;text-align:center"><img src="'+a.img+'" style="width:100%;border-radius:8px;border:1px solid var(--border2)"><div style="font-size:9px;color:var(--muted2);margin-top:3px">'+a.date+(a.poids?' \u00b7 '+a.poids+'kg':'')+'</div></div>',
+        '<div style="flex:1;text-align:center"><img src="'+b.img+'" style="width:100%;border-radius:8px;border:1px solid var(--gold2)"><div style="font-size:9px;color:var(--gold2);margin-top:3px">'+b.date+(b.poids?' \u00b7 '+b.poids+'kg':'')+'</div></div>'].join('')
+      +'</div>';
+    if(a.poids&&b.poids)h+='<div style="text-align:center;font-size:11px;color:var(--cyan);margin-bottom:10px">\u0394 '+(Math.round((b.poids-a.poids)*10)/10)+' kg entre les deux</div>';
+  }
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  arr.forEach(function(p,i){
+    h+='<div style="position:relative;width:31%"><img src="'+p.img+'" style="width:100%;border-radius:6px;border:1px solid var(--border2)">'
+      +'<div style="font-size:8px;color:var(--muted2);text-align:center">'+p.date+'</div>'
+      +'<button class="mini-btn" style="position:absolute;top:2px;right:2px;padding:2px 5px;min-height:0;border-color:rgba(248,113,113,.5);color:#f87171" onclick="progPhotoDel('+i+')">\u2715</button></div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
 function renderStats(){
   var w=getWeekStats();
   if(!w.length){
@@ -1918,10 +2259,21 @@ function renderStats(){
     return;
   }
   var lbls=w.map(function(x){return x.lbl;});
-  mkLine('cPoids',lbls,w.map(function(x){return x.poids;}),'#22d3ee',{min:80,max:94,refLine:82.5});
+  var poidsArr=w.map(function(x){return x.poids;});
+  mkLine('cPoids',lbls,poidsArr,'#22d3ee',{min:80,max:94,refLine:82.5,trend:movingAvg(poidsArr,3)});
   mkLine('cPompes',lbls,w.map(function(x){return x.pompes;}),'#f87171',{min:0,refLine:10});
   mkLine('cPlanche',lbls,w.map(function(x){return x.planche;}),'#4ade80',{min:0,refLine:60});
   mkLine('cCourse',lbls,w.map(function(x){return x.runMax;}),'#60a5fa',{min:0,refLine:30});
+  // Volume d'entraînement hebdo (nb de séries cali + minutes course)
+  var vol=getWeeklyVolume();
+  if(vol.length){
+    var vlbl=vol.map(function(x){return x.lbl;});
+    mkLine('cVolCali',vlbl,vol.map(function(x){return x.series;}),'#c084fc',{min:0});
+    mkLine('cVolRun',vlbl,vol.map(function(x){return x.runMin;}),'#38bdf8',{min:0});
+  }
+  renderPRWall();
+  renderCycleCompare();
+  renderProgPhotos();
   var fc=getDailyFc();
   if(fc.length)mkLine('cFc',fc.map(function(x){return x.lbl;}),fc.map(function(x){return x.v;}),'#fb923c',{min:45,max:85,refLine:65});
   // Tableau
@@ -2618,15 +2970,18 @@ function aiListModels(key){
       }).map(function(m){return (m.name||'').replace(/^models\//,'');});
       var set={}; avail.forEach(function(n){set[n]=1;});
       // Modèles texte/vision fiables pour l'analyse, par ordre de préférence.
+      // Flash-Lite EN PREMIER : quota gratuit large (Flash standard réduit à ~20/j depuis déc. 2025).
       // On EXCLUT tout ce qui génère/traite image, audio, vidéo, ou usages spéciaux.
       var known=[
-        'gemini-2.5-flash','gemini-flash-latest','gemini-2.0-flash',
-        'gemini-2.5-flash-lite','gemini-flash-lite-latest','gemini-2.0-flash-lite',
-        'gemini-3.5-flash','gemini-2.5-pro','gemini-pro-latest'
+        'gemini-flash-lite-latest','gemini-3.5-flash-lite','gemini-3.1-flash-lite',
+        'gemini-2.5-flash-lite','gemini-2.0-flash-lite',
+        'gemini-flash-latest','gemini-3.5-flash','gemini-2.5-flash','gemini-2.0-flash',
+        'gemini-pro-latest','gemini-2.5-pro'
       ];
       var chosen=known.filter(function(n){return set[n];});
-      // Repli : tout modèle gemini "flash/pro" restant qui n'est PAS image/tts/audio/etc.
+      // Repli : Flash-Lite d'abord, puis autres flash/pro (hors image/tts/audio/etc.)
       var bad=/image|-tts|native-audio|audio|veo|lyria|imagen|robotics|computer-use|embedding|aqa|antigravity|deep-research|omni|customtools/i;
+      avail.forEach(function(n){ if(chosen.indexOf(n)<0 && /flash-lite/.test(n) && !bad.test(n))chosen.push(n); });
       avail.forEach(function(n){
         if(chosen.indexOf(n)<0 && /gemini/.test(n) && /flash|pro/.test(n) && !bad.test(n))chosen.push(n);
       });
@@ -2646,9 +3001,11 @@ function aiCallCascade(key,models,body,idx){
     headers:{"Content-Type":"application/json","x-goog-api-key":key},
     body:JSON.stringify(body)
   }).then(function(r){
-    if(r.status===404||r.status===400){
-      // modèle inadapté : on passe au suivant
-      return aiCallCascade(key,models,body,idx+1);
+    if(r.status===404||r.status===400||r.status===429){
+      // modèle inadapté (400/404) ou quota épuisé (429) : on tente le suivant
+      if(idx+1<models.length)return aiCallCascade(key,models,body,idx+1);
+      // dernier modèle : on remonte l'erreur réelle pour un message clair
+      return r.text().then(function(t){throw new Error('HTTP '+r.status+' '+t.slice(0,160));});
     }
     if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status+' '+t.slice(0,160));});
     return r.json().then(function(data){
