@@ -235,7 +235,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 .mc-fat{background:linear-gradient(155deg,rgba(74,222,128,.15),rgba(20,18,33,.9));border-color:rgba(74,222,128,.35)}
 .macro-lbl{font-family:'Cinzel',serif;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted2)}
 .macro-val{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;margin-top:3px}
-.macro-goal{font-size:8.5px;color:var(--muted);font-family:'Space Mono',monospace}
+.macro-goal{font-size:11px;color:var(--muted2);font-family:'Space Mono',monospace;margin-top:3px;font-weight:600}
 .water-cups{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
 .wcup{width:30px;height:38px;border-radius:5px 5px 8px 8px;border:1.5px solid var(--border2);background:var(--bg3);font-size:13px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;color:var(--muted);cursor:pointer}
 .wcup.on{border-color:var(--cyan);background:linear-gradient(180deg,rgba(34,211,238,.08),rgba(34,211,238,.28));color:var(--cyan)}
@@ -2768,11 +2768,18 @@ function renderNutri(){
   var r=nutTotals(nutCurD),t=r.t;
   // Macros
   function mc(cls,lbl,val,goal,unit){
-    var pct=Math.min(100,Math.round(val/goal*100));
+    var pctReal=goal?Math.round(val/goal*100):0;
+    var over=pctReal>100;
+    var barW=Math.min(100,pctReal); // la barre de base ne dépasse pas 100%
+    var overW=over?Math.min(100,pctReal-100):0; // portion en excès (par-dessus)
+    var overCol='#ef4444';
     return '<div class="macro-card '+cls+'"><div class="macro-lbl">'+lbl+'</div>'
       +'<div class="macro-val">'+Math.round(val)+'<span style="font-size:10px;color:var(--muted2)"> /'+goal+unit+'</span></div>'
-      +'<div class="skill-bar" style="margin-top:7px"><div class="skill-fill" style="width:'+pct+'%;background:currentColor"></div></div>'
-      +'<div class="macro-goal">'+pct+'%</div></div>';
+      +'<div class="skill-bar" style="margin-top:7px;height:9px;background:rgba(255,255,255,.08);position:relative;overflow:hidden">'
+        +'<div class="skill-fill" style="width:'+barW+'%;background:currentColor;height:100%"></div>'
+        +(over?'<div style="position:absolute;top:0;left:0;width:'+overW+'%;height:100%;background:repeating-linear-gradient(45deg,'+overCol+','+overCol+' 4px,transparent 4px,transparent 8px)"></div>':'')
+      +'</div>'
+      +'<div class="macro-goal"'+(over?' style="color:'+overCol+';font-weight:700"':'')+'>'+pctReal+'%'+(over?' \u26a0\ufe0f +'+Math.round(val-goal)+unit:'')+'</div></div>';
   }
   document.getElementById('nutMacros').innerHTML=
     mc('mc-kcal','\ud83d\udd25 Calories',t.k,nutGoals.kcal,'')
@@ -4192,6 +4199,7 @@ function ficheByName(name){
     if(w.length>3)e=cands.find(function(x){return x.n.toLowerCase().indexOf(w)>=0;});
   }
   if(e)openFiche(e.id);
+  else toast('\ud83d\udcd6 Pas encore de fiche pour \u00ab '+name+' \u00bb dans le grimoire');
 }
 
 
