@@ -559,7 +559,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <div class="chart-card"><div class="chart-title">🥩 Protéines par jour (g)</div><div class="cwrap"><canvas id="cProt"></canvas></div></div>
   <div class="sec">🌀 Comparaison de cycles</div>
   <div class="card" style="overflow-x:auto" id="cycleCompare"></div>
-  <button class="btn btn-out" style="width:100%;margin-top:8px" onclick="exportCycleCard()">🖼️ Exporter le récap du dernier cycle (image)</button>
+  <div style="font-size:9.5px;color:var(--muted);margin-top:6px">💡 Exports du récap (image + document) dans l'onglet Bilan.</div>
   <div class="sec">📸 Photos de progression</div>
   <div class="card">
     <div style="font-size:10.5px;color:var(--muted2);margin-bottom:9px;line-height:1.5">Une photo par mois vaut mieux que la balance : elle montre la recomposition que le poids seul masque. Stockées uniquement sur cet appareil.</div>
@@ -580,6 +580,13 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
       <button class="btn btn-gold" id="shareBtn" style="display:none" onclick="shareBilan()">📤 Partager</button>
   </div>
   <div class="bilan-txt" id="bilanOut" style="display:none"></div>
+
+  <div class="sec" style="margin-top:20px">🌀 Récap de cycle</div>
+  <div style="font-size:10.5px;color:var(--muted2);margin-bottom:8px;line-height:1.5">À la fin de chaque cycle de 4 semaines, archive ton bilan complet. L'image pour partager, le document pour garder tous les détails dans ton projet.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-out" onclick="exportCycleCard()">🖼️ Image récap</button>
+    <button class="btn btn-gold" onclick="exportCycleDoc()">📄 Document détaillé</button>
+  </div>
 
   <div class="sec" style="margin-top:20px">💾 Sauvegarde</div>
   <div style="font-size:10.5px;color:var(--muted2);margin-bottom:8px;line-height:1.5">Tes données vivent dans le navigateur. Exporte régulièrement — c'est ton assurance contre la perte.</div>
@@ -649,7 +656,7 @@ try{ localStorage.getItem('t'); }catch(e){
 </script>
 <script>
 // ══════════ CONFIG ══════════
-var APP_VERSION = 'v3.7';
+var APP_VERSION = 'v3.8';
 // Purge unique du cache de modèle Gemini (bascule vers Flash-Lite, quota plus large)
 if(localStorage.getItem('sa_model_reset')!=='v37'){
   localStorage.removeItem('sa_gemini_model');
@@ -2185,15 +2192,16 @@ function getWeeklyVolume(){
     var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
     try{
       var s=JSON.parse(localStorage.getItem(k)); if(!s.days)continue;
-      var series=0,runMin=0;
+      var series=0,runMin=0,runKm=0;
       s.days.forEach(function(d){
         Object.keys(d.sets||{}).forEach(function(exo){
           (d.sets[exo]||[]).forEach(function(v){ if(+v>0)series++; });
         });
         if(d.run&&+d.run.dur)runMin+=+d.run.dur;
+        if(d.run&&+d.run.km)runKm+=+d.run.km;
       });
       var mo=Math.floor(dn/100)%100,da=dn%100;
-      out.push({key:dn,lbl:pd(da)+'/'+pd(mo),series:series,runMin:runMin});
+      out.push({key:dn,lbl:pd(da)+'/'+pd(mo),series:series,runMin:runMin,runKm:runKm});
     }catch(e){}
   }
   out.sort(function(a,b){return a.key-b.key;});
@@ -2282,7 +2290,7 @@ function computeCycles(){
     var diff=Math.round((mon-sd)/(7*86400000));
     if(diff<0)return;
     var cn=Math.floor(diff/4)+1;
-    if(!cycles[cn])cycles[cn]={n:cn,weeks:0,series:0,runMin:0,tonnage:0,quests:0,poidsFirst:null,poidsLast:null,pompes:0,planche:0,runMax:0};
+    if(!cycles[cn])cycles[cn]={n:cn,weeks:0,series:0,runMin:0,runKm:0,tonnage:0,quests:0,poidsFirst:null,poidsLast:null,pompes:0,planche:0,runMax:0};
     var c=cycles[cn];
     c.weeks++;
     c.quests+=x.done+(x.mvw||0);
@@ -2290,7 +2298,7 @@ function computeCycles(){
     if(x.planche>c.planche)c.planche=x.planche;
     if(x.runMax>c.runMax)c.runMax=x.runMax;
     if(x.poids!=null){if(c.poidsFirst==null)c.poidsFirst=x.poids;c.poidsLast=x.poids;}
-    var v=volMap[x.key]; if(v){c.series+=v.series;c.runMin+=v.runMin;}
+    var v=volMap[x.key]; if(v){c.series+=v.series;c.runMin+=v.runMin;c.runKm+=(v.runKm||0);}
     var tt=tonMap[x.key]; if(tt)c.tonnage+=tt.kg;
   });
   var ids=Object.keys(cycles).map(Number).sort(function(a,b){return a-b;});
@@ -2340,6 +2348,7 @@ function exportCycleCard(){
     ['🏋️ Séries cali totales', String(c.series)],
     ['🔗 Tonnage élastique', c.tonnage.toLocaleString('fr-FR')+' kg'],
     ['🏃 Minutes de course', c.runMin+' min'],
+    ['📏 Distance parcourue', (Math.round(c.runKm*10)/10)+' km'],
     ['💪 Max pompes', c.pompes||'—'],
     ['🧱 Max planche', c.planche?c.planche+' s':'—'],
     ['⚖️ Évolution poids', dp!=null?(dp>0?'+':'')+dp+' kg':'—']
@@ -2362,6 +2371,124 @@ function exportCycleCard(){
   txt('Généré le '+new Date().toLocaleDateString('fr-FR'),W/2,H-60,22,'#6b6580','center');
   var a=document.createElement('a');a.download='ascension_cycle'+c.n+'.png';a.href=cv.toDataURL('image/png');a.click();
   toast('🖼️ Récap du cycle '+c.n+' exporté');
+}
+// Export document Word détaillé du dernier cycle complet
+function exportCycleDoc(){
+  var cc=computeCycles(), cycles=cc.cycles, ids=cc.ids;
+  if(!ids.length){toast('Aucun cycle à exporter pour l\u2019instant');return;}
+  var cn=ids[ids.length-1], c=cycles[cn];
+  var prev=ids.length>=2?cycles[ids[ids.length-2]]:null;
+  var start=getCycleStart();
+  var sd=new Date(start.slice(0,4),start.slice(4,6)-1,start.slice(6,8));
+  // semaines du cycle
+  var weekKeys=[];
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
+    var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
+    var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
+    var diff=Math.round((mon-sd)/(7*86400000));
+    if(diff>=0&&Math.floor(diff/4)+1===cn)weekKeys.push(dn);
+  }
+  weekKeys.sort(function(a,b){return a-b;});
+  var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var DAYNAMES=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Récap Cycle '+cn+'</title>'
+    +'<style>body{font-family:Calibri,Arial,sans-serif;color:#222;line-height:1.5}h1{color:#8a6d1f;border-bottom:2px solid #e3c26b;padding-bottom:6px}h2{color:#5b4a8a;margin-top:22px}h3{color:#333;margin-bottom:4px}table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:5px 8px;font-size:12px;text-align:left}th{background:#f0ead8}.kpi{display:inline-block;margin:4px 14px 4px 0;font-size:13px}.kpi b{color:#8a6d1f}.muted{color:#888;font-size:11px}.spiral{background:#f4f0ff;border-left:4px solid #a78bfa;padding:8px 12px;margin:10px 0}</style></head><body>';
+  html+='<h1>⚔️ Sport Ascension — Récap Cycle '+cn+'</h1>';
+  html+='<p class="muted">Généré le '+new Date().toLocaleDateString('fr-FR')+' · '+weekKeys.length+' semaine(s) enregistrée(s)</p>';
+  // Synthèse
+  var dp=(c.poidsFirst!=null&&c.poidsLast!=null)?Math.round((c.poidsLast-c.poidsFirst)*10)/10:null;
+  html+='<h2>📊 Synthèse du cycle</h2>';
+  html+='<div>'
+    +'<span class="kpi">Semaines : <b>'+c.weeks+'/4</b></span>'
+    +'<span class="kpi">Quêtes : <b>'+c.quests+'</b></span>'
+    +'<span class="kpi">Séries cali : <b>'+c.series+'</b></span>'
+    +'<span class="kpi">Tonnage élastique : <b>'+c.tonnage.toLocaleString('fr-FR')+' kg</b></span>'
+    +'<span class="kpi">Course : <b>'+c.runMin+' min</b></span>'
+    +'<span class="kpi">Distance : <b>'+(Math.round(c.runKm*10)/10)+' km</b></span>'
+    +'<span class="kpi">Max pompes : <b>'+(c.pompes||'—')+'</b></span>'
+    +'<span class="kpi">Max planche : <b>'+(c.planche?c.planche+' s':'—')+'</b></span>'
+    +'<span class="kpi">Poids : <b>'+(dp!=null?(dp>0?'+':'')+dp+' kg':'—')+'</b></span>'
+    +'</div>';
+  if(prev){
+    var sp=[];
+    if(c.pompes&&prev.pompes)sp.push('Pompes '+(c.pompes>=prev.pompes?'↗ +'+(c.pompes-prev.pompes):'↘ '+(c.pompes-prev.pompes)));
+    if(c.planche&&prev.planche)sp.push('Planche '+(c.planche>=prev.planche?'↗ +'+(c.planche-prev.planche)+'s':'↘ '+(c.planche-prev.planche)+'s'));
+    if(c.tonnage&&prev.tonnage)sp.push('Tonnage '+(c.tonnage>=prev.tonnage?'↗ +'+(c.tonnage-prev.tonnage):'↘ '+(c.tonnage-prev.tonnage))+' kg');
+    if(sp.length)html+='<div class="spiral">🌀 <b>Spirale C'+prev.n+'→C'+cn+'</b> : '+sp.join(' · ')+'</div>';
+  }
+  // Détail par semaine et par séance
+  html+='<h2>📅 Détail des séances</h2>';
+  weekKeys.forEach(function(dn){
+    var s;try{s=JSON.parse(localStorage.getItem(KEY_PREFIX+dn));}catch(e){return;}
+    if(!s||!s.days)return;
+    var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
+    html+='<h3>Semaine du '+pd(mon.getDate())+'/'+pd(mon.getMonth()+1)+(s.label?' — '+esc(s.label):'')+'</h3>';
+    s.days.forEach(function(d,di){
+      var wo=WORKOUTS[d.type]||{label:d.woLabel||d.type,exos:[]};
+      if(wo.isRest&&(!d.done||d.done==='rest'))return;
+      var dt=new Date(mon);dt.setDate(mon.getDate()+di);
+      var statusMap={yes:'✓ Réalisée',mvw:'⚡ MVW',no:'✗ Skippée',rest:'Repos'};
+      var st=statusMap[d.done]||'—';
+      var head=DAYNAMES[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+' — '+esc(wo.label||d.type)+' ['+st+']';
+      var rows='';
+      (wo.exos||[]).forEach(function(e){
+        var v=(d.sets&&d.sets[e.n]||[]).filter(function(x){return x!==''&&x!=null;});
+        if(!v.length&&!e.sets)return;
+        var band=(d.elastic||{})[e.n]||e.band||'';
+        rows+='<tr><td>'+esc(e.n)+'</td><td>'+esc(e.g||'')+'</td><td>'+(v.length?v.join(' / '):'—')+'</td><td>'+esc(band)+'</td></tr>';
+      });
+      if(d.run&&(d.run.dur||d.run.km))rows+='<tr><td>Course</td><td>Course à pied</td><td>'+(d.run.dur||'—')+' min'+(d.run.km?' · '+d.run.km+' km':'')+'</td><td></td></tr>';
+      html+='<p style="margin:8px 0 2px"><b>'+head+'</b></p>';
+      var sc=drScore(d);
+      var meta=[];
+      if(sc!=null)meta.push('DR '+sc+'/40');
+      if(d.fc)meta.push('FC repos '+d.fc);
+      if(d.vo2)meta.push('VO2max '+d.vo2);
+      if(d.note)meta.push('Note '+d.note+'/10');
+      if(meta.length)html+='<p class="muted" style="margin:0 0 4px">'+meta.join(' · ')+'</p>';
+      if(rows)html+='<table><tr><th>Exercice</th><th>Nom Garmin</th><th>Résultats</th><th>Élastique</th></tr>'+rows+'</table>';
+      if(d.notes)html+='<p class="muted">Ressenti : '+esc(d.notes)+'</p>';
+    });
+  });
+  // Radar musculaire (scope global sur le cycle approximé via all)
+  try{
+    var scSave=statsScope; statsScope='all';
+    var msc=calcMuscles(); statsScope=scSave;
+    var mmax=Math.max.apply(null,msc.concat([1]));
+    html+='<h2>💪 Radar musculaire (cumul)</h2><table><tr><th>Groupe</th><th>% du plus travaillé</th></tr>';
+    MUSCLE_AXES.forEach(function(m,i){var pc=Math.round(msc[i]/mmax*100);html+='<tr><td>'+esc(m)+'</td><td>'+pc+'%'+(pc<30?' ⚠️':'')+'</td></tr>';});
+    html+='</table>';
+  }catch(e){}
+  // Nutrition moyenne du cycle
+  try{
+    var nk=0,np=0,nc=0,nl=0,nn=0;
+    weekKeys.forEach(function(dn){
+      var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
+      for(var dd=0;dd<7;dd++){
+        var dt=new Date(mon);dt.setDate(mon.getDate()+dd);
+        var kk=dt.getFullYear()+'-'+pd(dt.getMonth()+1)+'-'+pd(dt.getDate());
+        var log=nutLog[kk]; if(!log||!log.meals)continue;
+        var t=nutTotals(kk).t; if(t.k>0){nk+=t.k;np+=t.p;nc+=t.c;nl+=t.l;nn++;}
+      }
+    });
+    if(nn){html+='<h2>🍎 Nutrition moyenne ('+nn+' jours saisis)</h2>';
+      html+='<table><tr><th>Métrique</th><th>Moyenne/j</th><th>Cible</th></tr>'
+        +'<tr><td>Calories</td><td>'+Math.round(nk/nn)+' kcal</td><td>'+nutGoals.kcal+'</td></tr>'
+        +'<tr><td>Protéines</td><td>'+Math.round(np/nn)+' g</td><td>'+nutGoals.prot+'</td></tr>'
+        +'<tr><td>Glucides</td><td>'+Math.round(nc/nn)+' g</td><td>'+nutGoals.carb+'</td></tr>'
+        +'<tr><td>Lipides</td><td>'+Math.round(nl/nn)+' g</td><td>'+nutGoals.fat+'</td></tr></table>';
+    }
+  }catch(e){}
+  html+='<p class="muted" style="margin-top:24px">« Le deload oui, l\u2019arrêt jamais. » — Sport Ascension</p>';
+  html+='</body></html>';
+  var blob=new Blob(['\ufeff'+html],{type:'application/msword'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='ascension_cycle'+cn+'_detail.doc';
+  a.click();URL.revokeObjectURL(a.href);
+  toast('📄 Document du cycle '+cn+' exporté');
 }
 // ══════════ PHOTOS DE PROGRESSION ══════════
 function progPhotosGet(){try{return JSON.parse(localStorage.getItem('sa_prog_photos')||'[]');}catch(e){return [];}}
