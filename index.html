@@ -549,13 +549,17 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <div class="sec">📊 Charge d'entraînement</div>
   <div class="chart-card"><div class="chart-title">🏋️ Volume cali — séries/semaine</div><div class="cwrap"><canvas id="cVolCali"></canvas></div></div>
   <div class="chart-card"><div class="chart-title">🏃 Volume course — min/semaine</div><div class="cwrap"><canvas id="cVolRun"></canvas></div></div>
+  <div class="chart-card"><div class="chart-title">🔗 Tonnage élastique — kg soulevés/semaine (surcharge réelle)</div><div class="cwrap"><canvas id="cTonnage"></canvas></div></div>
   <div class="sec">❤️ FC repos (par jour)</div>
   <div class="chart-card"><div class="cwrap"><canvas id="cFc"></canvas></div></div>
+  <div class="sec">🫁 VO2max (Garmin) — cardio marathon</div>
+  <div class="chart-card"><div class="chart-title">Plus c'est haut, meilleure est ta capacité aérobie</div><div class="cwrap"><canvas id="cVo2"></canvas></div></div>
   <div class="sec">🍎 Nutrition</div>
   <div class="chart-card"><div class="chart-title">🔥 Calories par jour</div><div class="cwrap"><canvas id="cKcal"></canvas></div></div>
   <div class="chart-card"><div class="chart-title">🥩 Protéines par jour (g)</div><div class="cwrap"><canvas id="cProt"></canvas></div></div>
   <div class="sec">🌀 Comparaison de cycles</div>
   <div class="card" style="overflow-x:auto" id="cycleCompare"></div>
+  <button class="btn btn-out" style="width:100%;margin-top:8px" onclick="exportCycleCard()">🖼️ Exporter le récap du dernier cycle (image)</button>
   <div class="sec">📸 Photos de progression</div>
   <div class="card">
     <div style="font-size:10.5px;color:var(--muted2);margin-bottom:9px;line-height:1.5">Une photo par mois vaut mieux que la balance : elle montre la recomposition que le poids seul masque. Stockées uniquement sur cet appareil.</div>
@@ -1111,7 +1115,7 @@ function renderWeek(){
     }
     (wo.exos||[]).forEach(function(e,ei){ if(e.sets)updateAvg(i,ei); });
     var n10=document.getElementById('note10-'+i); if(n10&&day.note)n10.value=day.note;
-    var cb=document.getElementById('courb-'+i); if(cb&&day.courb)cb.value=day.courb;
+    var cb=document.getElementById('vo2-'+i); if(cb&&day.vo2)cb.value=day.vo2;
     var nt=document.getElementById('note-'+i); if(nt&&day.notes)nt.value=day.notes;
     var fc=document.getElementById('fc-'+i); if(fc&&day.fc)fc.value=day.fc;
   });
@@ -1269,10 +1273,12 @@ function dayBody(day,i,wo){
   var sc2=drScore(day), v2=drVerdict(sc2);
   h+='<div class="dr-score" id="drscore-'+i+'">'+(sc2!=null?'Score : <span style="color:'+v2.col+'">'+sc2+'/40</span> \u2014 '+v2.ic+' '+v2.txt:'Score : \u2014 /40')+'</div>';
   h+='<div class="field" style="margin-top:9px"><label>FC repos matin (bpm)</label><input type="number" inputmode="numeric" id="fc-'+i+'" placeholder="ex: 58" onchange="saveField('+i+',\'fc\',this.value)"></div></div>';
-  // Note + courbatures + zones
+  // Note s\u00e9ance (+ VO2max uniquement les jours de course \u2014 Garmin ne l'actualise qu'en course GPS)
+  var isRun=day.type.indexOf('run')===0;
   h+='<div class="frow" style="margin-top:10px">'
     +'<div class="field"><label>Note s\u00e9ance /10</label><input type="number" inputmode="numeric" min="1" max="10" id="note10-'+i+'" onchange="saveField('+i+',\'note\',this.value)"></div>'
-    +'<div class="field"><label>Courbatures /10</label><input type="number" inputmode="numeric" min="0" max="10" id="courb-'+i+'" onchange="saveField('+i+',\'courb\',this.value)"></div></div>';
+    +(isRun?'<div class="field"><label>VO2max (Garmin)</label><input type="number" inputmode="decimal" min="20" max="90" step="0.1" id="vo2-'+i+'" placeholder="ex: 42" onchange="saveField('+i+',\'vo2\',this.value)"></div>':'<div class="field"></div>')
+    +'</div>';
   var ZONES=['Pecs','Dorsaux','\u00c9paules','Triceps','Biceps','Abdos','Quadris','Ischio','Fessiers','Mollets','Lombaires'];
   var dz=day.zones||[];
   h+='<div class="field"><label>Zones courbatures</label><div class="zone-chips">'
@@ -1660,6 +1666,64 @@ function renderSkills(){
       +bossLine+'</div>';
   }).join('');
 }
+// Progression mesurée vers un boss depuis les données saisies. Renvoie {cur,target,unit,pct} ou null.
+function bossProgress(skill,b){
+  function bestExo(name){
+    var max=PR_BASE[name]||0;
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(!k||k.indexOf(KEY_PREFIX)!==0||isNaN(parseInt(k.slice(KEY_PREFIX.length),10)))continue;
+      try{var s=JSON.parse(localStorage.getItem(k));(s.days||[]).forEach(function(d){
+        ((d.sets&&d.sets[name])||[]).forEach(function(x){if(+x>max)max=+x;});
+      });}catch(e){}
+    }
+    return max;
+  }
+  function bestRun(){
+    var max=0;
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(!k||k.indexOf(KEY_PREFIX)!==0||isNaN(parseInt(k.slice(KEY_PREFIX.length),10)))continue;
+      try{var s=JSON.parse(localStorage.getItem(k));(s.days||[]).forEach(function(d){
+        if(d.run&&+d.run.dur>max)max=+d.run.dur;
+      });}catch(e){}
+    }
+    return max;
+  }
+  // Boss avec critère auto explicite
+  if(b.auto&&b.auto.exo!=null){
+    var cur=bestExo(b.auto.exo), tgt=b.auto.val;
+    var unit=/planche|gainage|hollow|l-sit/i.test(b.auto.exo)?'s':' reps';
+    return {cur:cur,target:tgt,unit:unit,pct:Math.min(100,Math.round(cur/tgt*100)),label:b.auto.exo};
+  }
+  if(b.auto&&b.auto.run!=null){
+    var c=bestRun();
+    return {cur:c,target:b.auto.run,unit:' min',pct:Math.min(100,Math.round(c/b.auto.run*100)),label:'Course la plus longue'};
+  }
+  if(b.streak){
+    var st=calcStreak();
+    return {cur:st,target:b.streak,unit:' j',pct:Math.min(100,Math.round(st/b.streak*100)),label:'Streak actuelle'};
+  }
+  if(b.poids){
+    var p=getPoids();
+    if(p==null)return null;
+    // progression du poids de départ (91) vers la cible du boss
+    var done=Math.max(0,Math.min(100,Math.round((POIDS_START-p)/(POIDS_START-b.poids)*100)));
+    return {cur:p,target:b.poids,unit:' kg',pct:done,label:'Poids actuel',invert:true};
+  }
+  // Boss sans mesure directe : on estime via un exo proxy connu
+  var PROXY={
+    f20pompes:{exo:'Pompes au sol',val:20}, ftraction:{exo:'Tractions strictes',val:1},
+    f10tract:{exo:'Tractions strictes',val:10}, c2min:{exo:'Planche',val:120},
+    clsit:{exo:'L-sit tuck (barres)',val:10}
+  };
+  if(PROXY[b.id]){
+    var px=PROXY[b.id], cv=bestExo(px.exo);
+    var un=/planche|l-sit/i.test(px.exo)?'s':' reps';
+    return {cur:cv,target:px.val,unit:un,pct:Math.min(100,Math.round(cv/px.val*100)),label:px.exo,proxy:true};
+  }
+  return null; // pas de mesure possible (ex. muscle-up, dragon flag complet)
+}
 function openSkillDetail(id){
   var sk=SKILLS.find(function(s){return s.id===id;});
   var lv=allLevels(), x=getXp();
@@ -1681,11 +1745,16 @@ function openSkillDetail(id){
     var isNext=!beaten&&(BOSSES[id].slice(0,i).every(function(p){return x.bosses[p.id];}));
     var col=beaten?'var(--green)':isNext?sk.color:'var(--muted)';
     var ic=beaten?'\ud83c\udfc6':isNext?'\ud83d\udc79':'\ud83d\udd12';
-    h+='<div style="display:flex;gap:10px;align-items:center;padding:9px 11px;margin-bottom:6px;border-radius:10px;border:1px solid '+(isNext?sk.color:'var(--border)')+';background:'+(beaten?'rgba(74,222,128,.07)':isNext?'rgba(255,255,255,.03)':'transparent')+';opacity:'+(beaten||isNext?1:.55)+'">'
+    var prog=beaten?null:bossProgress(id,b);
+    h+='<div style="display:flex;gap:10px;align-items:center;padding:9px 11px;margin-bottom:6px;border-radius:10px;border:1px solid '+(isNext?sk.color:'var(--border)')+';background:'+(beaten?'rgba(74,222,128,.07)':isNext?'rgba(255,255,255,.03)':'transparent')+';opacity:'+(beaten||isNext?1:.6)+'">'
       +'<span style="font-size:17px">'+ic+'</span>'
       +'<div style="flex:1"><div style="font-size:11.5px;font-weight:700;color:'+(beaten?'var(--green)':'var(--text)')+'">'+b.name+'</div>'
       +'<div style="font-size:8.5px;color:var(--muted);font-family:\'Space Mono\',monospace">~lvl '+b.lvl+' \u00b7 +'+b.xp+' XP'
-      +(beaten?' \u00b7 vaincu le '+new Date(x.bosses[b.id]).toLocaleDateString('fr-FR'):'')+'</div></div>'
+      +(beaten?' \u00b7 vaincu le '+new Date(x.bosses[b.id]).toLocaleDateString('fr-FR'):'')+'</div>'
+      +(prog?'<div style="margin-top:6px"><div class="skill-bar" style="height:8px;background:rgba(255,255,255,.08)"><div style="width:'+prog.pct+'%;height:100%;background:'+(prog.pct>=100?'var(--green)':sk.color)+';border-radius:3px;transition:width .4s"></div></div>'
+        +'<div style="font-size:8.5px;color:'+(prog.pct>=100?'var(--green)':'var(--muted2)')+';font-family:\'Space Mono\',monospace;margin-top:2px">'
+        +prog.label+' : '+prog.cur+prog.unit+' / '+prog.target+prog.unit+' \u2014 '+prog.pct+'%'+(prog.proxy?' (estim.)':'')+(prog.pct>=100&&!prog.invert?' \u2713 pr\u00eat !':'')+'</div></div>':'')
+      +'</div>'
       +(isNext&&!b.auto&&!b.streak&&!b.poids?'<button class="boss-btn" onclick="beatBoss(\''+id+'\',\''+b.id+'\')">Vaincu !</button>':'')
       +(isNext&&(b.auto||b.streak||b.poids)?'<span style="font-size:8px;color:var(--muted2)">auto \u2713</span>':'')
       +'</div>';
@@ -1727,7 +1796,8 @@ function genBilan(){
     t+='Statut : '+stL[d.done]+(d.fc?' | FC repos : '+d.fc+' bpm':'')+'\n';
     var sc=drScore(d);
     if(sc!=null){var dr=d.dr;t+='DR : '+sc+'/40 (Sommeil:'+dr.s+' \u00c9nergie:'+dr.e+' Courbat.:'+dr.c+' Mental:'+dr.m+')\n';}
-    if(d.note)t+='Note s\u00e9ance : '+d.note+'/10'+(d.courb?' | Courbatures : '+d.courb+'/10':'')+'\n';
+    if(d.note)t+='Note s\u00e9ance : '+d.note+'/10\n';
+    if(d.vo2)t+='VO2max : '+d.vo2+' ml/kg/min\n';
     if(d.zones&&d.zones.length)t+='Zones courbatures : '+d.zones.join(', ')+'\n';
     if(d.run&&d.run.dur)t+='Course : '+d.run.dur+' min'+(d.run.km?' \u2022 '+d.run.km+' km':'')+'\n';
     Object.keys(d.sets||{}).forEach(function(exo){
@@ -2042,6 +2112,25 @@ function getDailyFc(){
   });
   return out;
 }
+function getDailyVo2(){
+  var out=[],weeks=[];
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
+    var dn=parseInt(k.slice(KEY_PREFIX.length),10);if(isNaN(dn))continue;
+    try{var s=JSON.parse(localStorage.getItem(k));if(s.days)weeks.push({key:dn,days:s.days});}catch(e){}
+  }
+  weeks.sort(function(a,b){return a.key-b.key;});
+  weeks.slice(-8).forEach(function(w){
+    var mon=new Date(Math.floor(w.key/10000),Math.floor(w.key/100)%100-1,w.key%100);
+    w.days.forEach(function(d,di){
+      if(!d.vo2||!+d.vo2)return;
+      var dt=new Date(mon);dt.setDate(mon.getDate()+di);
+      out.push({lbl:pd(dt.getDate())+'/'+pd(dt.getMonth()+1),v:+d.vo2});
+    });
+  });
+  return out;
+}
 // Alerte surentraînement : FC repos récente vs ligne de base
 function fcAlert(){
   var fc=getDailyFc();
@@ -2110,6 +2199,34 @@ function getWeeklyVolume(){
   out.sort(function(a,b){return a.key-b.key;});
   return out;
 }
+// Tonnage élastique hebdo : kg de la bande × reps, pour tracer la vraie surcharge
+function bandKg(id){for(var z=0;z<ELASTIC_BANDS.length;z++)if(ELASTIC_BANDS[z].id===id)return parseInt(ELASTIC_BANDS[z].kg,10)||0;return 0;}
+function getWeeklyTonnage(){
+  var out=[];
+  for(var i=0;i<localStorage.length;i++){
+    var k=localStorage.key(i);
+    if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
+    var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
+    try{
+      var s=JSON.parse(localStorage.getItem(k)); if(!s.days)continue;
+      var tonnage=0;
+      s.days.forEach(function(d){
+        var wo=WORKOUTS[d.type]||{exos:[]};
+        var el=d.elastic||{};
+        (wo.exos||[]).forEach(function(e){
+          if(!e.elastic)return;
+          // bande réellement utilisée (choix du jour) sinon bande prescrite
+          var band=el[e.n]||e.band; if(!band)return;
+          var kg=bandKg(band); if(!kg)return;
+          (d.sets&&d.sets[e.n]||[]).forEach(function(v){ if(+v>0)tonnage+=kg*(+v); });
+        });
+      });
+      if(tonnage>0){var mo=Math.floor(dn/100)%100,da=dn%100;out.push({key:dn,lbl:pd(da)+'/'+pd(mo),kg:tonnage});}
+    }catch(e){}
+  }
+  out.sort(function(a,b){return a.key-b.key;});
+  return out;
+}
 // Mur de records : meilleure perf all-time par exercice suivi
 function renderPRWall(){
   var el=document.getElementById('prWall'); if(!el)return;
@@ -2151,13 +2268,13 @@ function renderPRWall(){
     +'</div>';
   }).join('');
 }
-// Comparaison de cycles : agrège les semaines par cycle de 4
-function renderCycleCompare(){
-  var el=document.getElementById('cycleCompare'); if(!el)return;
+// Agrège les semaines par cycle de 4 — réutilisé par l'affichage et l'export image
+function computeCycles(){
   var start=getCycleStart();
   var sd=new Date(start.slice(0,4),start.slice(4,6)-1,start.slice(6,8));
-  var w=getWeekStats(), vol=getWeeklyVolume();
+  var w=getWeekStats(), vol=getWeeklyVolume(), ton=getWeeklyTonnage();
   var volMap={}; vol.forEach(function(x){volMap[x.key]=x;});
+  var tonMap={}; ton.forEach(function(x){tonMap[x.key]=x;});
   var cycles={};
   w.forEach(function(x){
     var y=Math.floor(x.key/10000),mo=Math.floor(x.key/100)%100,da=x.key%100;
@@ -2165,7 +2282,7 @@ function renderCycleCompare(){
     var diff=Math.round((mon-sd)/(7*86400000));
     if(diff<0)return;
     var cn=Math.floor(diff/4)+1;
-    if(!cycles[cn])cycles[cn]={n:cn,weeks:0,series:0,runMin:0,quests:0,poidsFirst:null,poidsLast:null,pompes:0,planche:0,runMax:0};
+    if(!cycles[cn])cycles[cn]={n:cn,weeks:0,series:0,runMin:0,tonnage:0,quests:0,poidsFirst:null,poidsLast:null,pompes:0,planche:0,runMax:0};
     var c=cycles[cn];
     c.weeks++;
     c.quests+=x.done+(x.mvw||0);
@@ -2174,8 +2291,15 @@ function renderCycleCompare(){
     if(x.runMax>c.runMax)c.runMax=x.runMax;
     if(x.poids!=null){if(c.poidsFirst==null)c.poidsFirst=x.poids;c.poidsLast=x.poids;}
     var v=volMap[x.key]; if(v){c.series+=v.series;c.runMin+=v.runMin;}
+    var tt=tonMap[x.key]; if(tt)c.tonnage+=tt.kg;
   });
   var ids=Object.keys(cycles).map(Number).sort(function(a,b){return a-b;});
+  return {cycles:cycles,ids:ids};
+}
+// Comparaison de cycles : agrège les semaines par cycle de 4
+function renderCycleCompare(){
+  var el=document.getElementById('cycleCompare'); if(!el)return;
+  var cc=computeCycles(), cycles=cc.cycles, ids=cc.ids;
   if(!ids.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">Le r\u00e9cap appara\u00eetra \u00e0 la fin de ton premier cycle.</div>';return;}
   var rows='<tr><th>Cycle</th><th>Sem.</th><th>Séries</th><th>Course</th><th>Quêtes</th><th>Pompes</th><th>Planche</th><th>Poids</th></tr>';
   ids.forEach(function(id){
@@ -2184,7 +2308,6 @@ function renderCycleCompare(){
     rows+='<tr><td><b>C'+c.n+'</b></td><td>'+c.weeks+'/4</td><td>'+c.series+'</td><td>'+c.runMin+'min</td><td>'+c.quests+'</td><td>'+(c.pompes||'\u2014')+'</td><td>'+(c.planche?c.planche+'s':'\u2014')+'</td><td>'+(dp!=null?(dp>0?'+':'')+Math.round(dp*10)/10+'kg':'\u2014')+'</td></tr>';
   });
   var html='<table class="hist-table">'+rows+'</table>';
-  // Message de spirale : compare le dernier cycle complet au précédent
   if(ids.length>=2){
     var last=cycles[ids[ids.length-1]], prev=cycles[ids[ids.length-2]];
     var msgs=[];
@@ -2194,6 +2317,51 @@ function renderCycleCompare(){
     if(msgs.length)html+='<div style="font-size:10.5px;color:var(--gold2);margin-top:8px;line-height:1.5">\ud83c\udf00 Spirale C'+prev.n+'\u2192C'+last.n+' : '+msgs.join(' \u00b7 ')+'</div>';
   }
   el.innerHTML=html;
+}
+// Export du récap du dernier cycle en image PNG
+function exportCycleCard(){
+  var cc=computeCycles(), cycles=cc.cycles, ids=cc.ids;
+  if(!ids.length){toast('Aucun cycle complet à exporter pour l\u2019instant');return;}
+  var c=cycles[ids[ids.length-1]];
+  var prev=ids.length>=2?cycles[ids[ids.length-2]]:null;
+  var W=1080,H=1080,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  var g=cv.getContext('2d');
+  // fond
+  var grd=g.createLinearGradient(0,0,0,H);grd.addColorStop(0,'#141221');grd.addColorStop(1,'#0a0812');
+  g.fillStyle=grd;g.fillRect(0,0,W,H);
+  g.strokeStyle='rgba(227,194,107,.4)';g.lineWidth=3;g.strokeRect(24,24,W-48,H-48);
+  function txt(s,x,y,size,col,align,weight){g.fillStyle=col;g.font=(weight||'')+' '+size+'px system-ui,sans-serif';g.textAlign=align||'left';g.fillText(s,x,y);}
+  txt('⚔️ SPORT ASCENSION',W/2,110,44,'#e3c26b','center','bold');
+  txt('Récap — Cycle '+c.n,W/2,170,32,'#a78bfa','center','bold');
+  var dp=(c.poidsFirst!=null&&c.poidsLast!=null)?Math.round((c.poidsLast-c.poidsFirst)*10)/10:null;
+  var lines=[
+    ['📅 Semaines complétées', c.weeks+' / 4'],
+    ['🎯 Quêtes accomplies', String(c.quests)],
+    ['🏋️ Séries cali totales', String(c.series)],
+    ['🔗 Tonnage élastique', c.tonnage.toLocaleString('fr-FR')+' kg'],
+    ['🏃 Minutes de course', c.runMin+' min'],
+    ['💪 Max pompes', c.pompes||'—'],
+    ['🧱 Max planche', c.planche?c.planche+' s':'—'],
+    ['⚖️ Évolution poids', dp!=null?(dp>0?'+':'')+dp+' kg':'—']
+  ];
+  var y=280;
+  lines.forEach(function(l){
+    g.fillStyle='rgba(255,255,255,.03)';g.fillRect(70,y-38,W-140,64);
+    txt(l[0],100,y,32,'#c9c4d6','left');
+    txt(String(l[1]),W-100,y,36,'#e3c26b','right','bold');
+    y+=88;
+  });
+  // spirale
+  if(prev){
+    y+=10;
+    var sp=[];
+    if(c.pompes&&prev.pompes)sp.push('Pompes '+(c.pompes>=prev.pompes?'↗+':'↘')+(c.pompes-prev.pompes));
+    if(c.planche&&prev.planche)sp.push('Planche '+(c.planche>=prev.planche?'↗+':'↘')+(c.planche-prev.planche)+'s');
+    if(sp.length){txt('🌀 Spirale C'+prev.n+'→C'+c.n,W/2,y,28,'#a78bfa','center','bold');y+=44;txt(sp.join('   ·   '),W/2,y,26,'#8fd67a','center');}
+  }
+  txt('Généré le '+new Date().toLocaleDateString('fr-FR'),W/2,H-60,22,'#6b6580','center');
+  var a=document.createElement('a');a.download='ascension_cycle'+c.n+'.png';a.href=cv.toDataURL('image/png');a.click();
+  toast('🖼️ Récap du cycle '+c.n+' exporté');
 }
 // ══════════ PHOTOS DE PROGRESSION ══════════
 function progPhotosGet(){try{return JSON.parse(localStorage.getItem('sa_prog_photos')||'[]');}catch(e){return [];}}
@@ -2271,11 +2439,17 @@ function renderStats(){
     mkLine('cVolCali',vlbl,vol.map(function(x){return x.series;}),'#c084fc',{min:0});
     mkLine('cVolRun',vlbl,vol.map(function(x){return x.runMin;}),'#38bdf8',{min:0});
   }
+  var ton=getWeeklyTonnage();
+  if(ton.length){
+    mkLine('cTonnage',ton.map(function(x){return x.lbl;}),ton.map(function(x){return x.kg;}),'#f59e0b',{min:0});
+  }
   renderPRWall();
   renderCycleCompare();
   renderProgPhotos();
   var fc=getDailyFc();
   if(fc.length)mkLine('cFc',fc.map(function(x){return x.lbl;}),fc.map(function(x){return x.v;}),'#fb923c',{min:45,max:85,refLine:65});
+  var vo2=getDailyVo2();
+  if(vo2.length)mkLine('cVo2',vo2.map(function(x){return x.lbl;}),vo2.map(function(x){return x.v;}),'#34d399',{});
   // Tableau
   var rows='<tr><th>Semaine</th><th>Poids</th><th>Pompes</th><th>Planche</th><th>Course</th><th>Qu\u00eates</th><th>\u26a1XP</th><th>FC moy</th></tr>';
   w.slice().reverse().forEach(function(x){
