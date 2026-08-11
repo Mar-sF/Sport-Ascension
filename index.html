@@ -18,10 +18,10 @@
 <style>
 :root{
   --bg:#0b0a14;--bg2:#141221;--bg3:#1c1930;--bg4:#262242;
-  --border:rgba(201,168,76,.16);--border2:rgba(201,168,76,.3);
+  --border:rgba(201,168,76,.28);--border2:rgba(201,168,76,.45);
   --gold:#e3c26b;--gold2:#c9a227;--xp:#a78bfa;
   --green:#4ade80;--red:#f87171;--blue:#60a5fa;--cyan:#22d3ee;--orange:#fb923c;
-  --text:#e8e3d5;--muted:#6b6880;--muted2:#a09bb0;
+  --text:#f0ece0;--muted:#9691a8;--muted2:#c4bfd2;
   --r:12px;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -44,8 +44,8 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 .hd-lvl{margin-left:auto;text-align:center;position:relative;width:52px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--gold2);border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,.14),rgba(20,18,33,.9));box-shadow:0 0 16px rgba(167,139,250,.25),inset 0 0 10px rgba(0,0,0,.5)}
 .hd-lvl-num{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:var(--gold);line-height:1}
 .hd-lvl-lbl{font-size:6.5px;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
-.hd-xpbar{height:7px;background:var(--bg3);border-radius:4px;margin-top:9px;overflow:hidden;border:1px solid rgba(167,139,250,.25);position:relative}
-.hd-xpfill{height:100%;background:repeating-linear-gradient(90deg,var(--xp) 0 14px,#8b6ee8 14px 16px);border-radius:3px;transition:width .6s cubic-bezier(.22,1,.36,1);box-shadow:0 0 8px rgba(167,139,250,.5)}
+.hd-xpbar{height:10px;background:rgba(255,255,255,.10);border-radius:5px;margin-top:9px;overflow:hidden;border:1px solid rgba(167,139,250,.4);position:relative}
+.hd-xpfill{height:100%;background:linear-gradient(90deg,var(--xp),#8b6ee8);border-radius:5px;transition:width .6s cubic-bezier(.22,1,.36,1);box-shadow:0 0 10px rgba(167,139,250,.7),inset 0 1px 0 rgba(255,255,255,.3)}
 
 /* ═══ NAV — onglets de grimoire ═══ */
 .nav{display:flex;gap:5px;padding:10px 12px;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:99;background:rgba(11,10,20,.95);backdrop-filter:blur(14px)}
@@ -82,8 +82,8 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 .skill-icon{font-size:15px;filter:drop-shadow(0 0 6px rgba(255,255,255,.15))}
 .skill-name{font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted2)}
 .skill-lvl{margin-left:auto;font-family:'Cinzel',serif;font-size:18px;font-weight:700;text-shadow:0 0 10px currentColor}
-.skill-bar{height:6px;background:rgba(0,0,0,.45);border-radius:3px;margin-top:9px;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
-.skill-fill{height:100%;border-radius:3px;transition:width .5s;background:repeating-linear-gradient(90deg,currentColor 0 10px,transparent 10px 11px)}
+.skill-bar{height:10px;background:rgba(255,255,255,.10);border-radius:5px;margin-top:9px;overflow:hidden;border:1px solid rgba(255,255,255,.14)}
+.skill-fill{height:100%;border-radius:5px;transition:width .5s;background:currentColor;box-shadow:0 0 8px currentColor,inset 0 1px 0 rgba(255,255,255,.35)}
 .skill-xp{font-size:8.5px;color:var(--muted);margin-top:5px;font-family:'Space Mono',monospace}
 
 /* ═══ HERO — quête du jour ═══ */
@@ -361,7 +361,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
       <input type="number" inputmode="decimal" step="0.1" id="poidsInput" placeholder="91.0" style="width:90px;min-height:44px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Space Mono',monospace;font-size:16px;text-align:center">
       <button class="btn btn-gold" onclick="savePoids()">Peser</button>
     </div>
-    <div class="skill-bar" style="margin-top:12px;height:7px"><div class="skill-fill" id="poidsBar" style="background:var(--cyan);width:0%"></div></div>
+    <div class="skill-bar" style="margin-top:12px;height:12px"><div class="skill-fill" id="poidsBar" style="background:var(--cyan);color:var(--cyan);width:0%"></div></div>
     <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;font-family:'Space Mono',monospace"><span>91 kg — départ</span><span>82.5 kg — lvl 99</span></div>
   </div>
 </div>
@@ -413,6 +413,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
     <button class="mini-btn gold" onclick="nutToday()">📍 Auj.</button>
     <button class="mini-btn" onclick="nutChDay(1)">›</button>
   </div>
+  <button class="btn btn-out" style="width:100%;margin-bottom:10px;font-size:11.5px" onclick="nutCopyDay(-1)">📋 Copier tous les repas d'hier</button>
   <div class="macro-grid" id="nutMacros"></div>
   <div class="card">
     <div style="display:flex;align-items:center;gap:9px">
@@ -2380,115 +2381,259 @@ function exportCycleDoc(){
   var prev=ids.length>=2?cycles[ids[ids.length-2]]:null;
   var start=getCycleStart();
   var sd=new Date(start.slice(0,4),start.slice(4,6)-1,start.slice(6,8));
-  // semaines du cycle
-  var weekKeys=[];
+  var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var DN=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var fx=function(n){return Math.round(n*10)/10;};
+
+  // ── Collecte de toutes les semaines, avec marquage du cycle ──
+  var allWeeks=[];
   for(var i=0;i<localStorage.length;i++){
     var k=localStorage.key(i);
     if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
     var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
     var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
     var diff=Math.round((mon-sd)/(7*86400000));
-    if(diff>=0&&Math.floor(diff/4)+1===cn)weekKeys.push(dn);
+    var cyc=diff>=0?Math.floor(diff/4)+1:0;
+    try{var s=JSON.parse(localStorage.getItem(k)); if(s&&s.days)allWeeks.push({key:dn,mon:mon,cyc:cyc,cw:diff>=0?(diff%4)+1:0,s:s});}catch(e){}
   }
-  weekKeys.sort(function(a,b){return a-b;});
-  var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  var DAYNAMES=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Récap Cycle '+cn+'</title>'
-    +'<style>body{font-family:Calibri,Arial,sans-serif;color:#222;line-height:1.5}h1{color:#8a6d1f;border-bottom:2px solid #e3c26b;padding-bottom:6px}h2{color:#5b4a8a;margin-top:22px}h3{color:#333;margin-bottom:4px}table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:5px 8px;font-size:12px;text-align:left}th{background:#f0ead8}.kpi{display:inline-block;margin:4px 14px 4px 0;font-size:13px}.kpi b{color:#8a6d1f}.muted{color:#888;font-size:11px}.spiral{background:#f4f0ff;border-left:4px solid #a78bfa;padding:8px 12px;margin:10px 0}</style></head><body>';
+  allWeeks.sort(function(a,b){return a.key-b.key;});
+  var cycWeeks=allWeeks.filter(function(w){return w.cyc===cn;});
+
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Sport Ascension — Cycle '+cn+'</title>'
+    +'<style>body{font-family:Calibri,Arial,sans-serif;color:#222;line-height:1.45;font-size:12px}'
+    +'h1{color:#8a6d1f;border-bottom:3px solid #e3c26b;padding-bottom:6px;font-size:24px}'
+    +'h2{color:#5b4a8a;margin-top:24px;border-bottom:1px solid #ddd;padding-bottom:3px;font-size:17px}'
+    +'h3{color:#333;margin:14px 0 4px;font-size:14px}'
+    +'h4{color:#555;margin:10px 0 2px;font-size:12.5px}'
+    +'table{border-collapse:collapse;width:100%;margin:6px 0}'
+    +'td,th{border:1px solid #ccc;padding:4px 7px;font-size:11px;text-align:left}'
+    +'th{background:#f0ead8;font-weight:bold}'
+    +'tr.tot td{background:#faf7ec;font-weight:bold}'
+    +'.kpi{display:inline-block;margin:3px 12px 3px 0;font-size:12px}.kpi b{color:#8a6d1f}'
+    +'.muted{color:#888;font-size:10.5px}'
+    +'.box{background:#f4f0ff;border-left:4px solid #a78bfa;padding:7px 11px;margin:9px 0}'
+    +'.warn{background:#fdf3f3;border-left:4px solid #e07070;padding:7px 11px;margin:9px 0}'
+    +'.ok{color:#2a7a3a}.bad{color:#b03030}'
+    +'</style></head><body>';
+
   html+='<h1>⚔️ Sport Ascension — Récap Cycle '+cn+'</h1>';
-  html+='<p class="muted">Généré le '+new Date().toLocaleDateString('fr-FR')+' · '+weekKeys.length+' semaine(s) enregistrée(s)</p>';
-  // Synthèse
-  var dp=(c.poidsFirst!=null&&c.poidsLast!=null)?Math.round((c.poidsLast-c.poidsFirst)*10)/10:null;
-  html+='<h2>📊 Synthèse du cycle</h2>';
+  html+='<p class="muted">Généré le '+new Date().toLocaleString('fr-FR')+' · '+APP_VERSION+' · Cycle démarré le '+start.slice(6,8)+'/'+start.slice(4,6)+'/'+start.slice(0,4)+'</p>';
+
+  // ════ 1. SYNTHÈSE GLOBALE (depuis le début) ════
+  html+='<h2>🌍 Synthèse globale (depuis le début)</h2>';
+  var xp=getXp(), glTot=0;
+  html+='<table><tr><th>Compétence</th><th>Niveau</th><th>Rang</th><th>XP</th></tr>';
+  SKILLS.forEach(function(sk){
+    var lv = sk.id==='shape' ? shapeLevel() : levelFromXp(xp[sk.id]||0);
+    glTot+=lv;
+    html+='<tr><td>'+esc(sk.name)+'</td><td>'+lv+'</td><td>'+esc(rankOf(lv))+'</td><td>'+(sk.id==='shape'?'—':(xp[sk.id]||0))+'</td></tr>';
+  });
+  html+='<tr class="tot"><td>Niveau global</td><td colspan="3">'+Math.round(glTot/SKILLS.length)+'</td></tr></table>';
+  var pNow=getPoids();
+  html+='<div>'
+    +'<span class="kpi">Poids actuel : <b>'+(pNow!=null?pNow+' kg':'—')+'</b></span>'
+    +'<span class="kpi">Départ : <b>'+POIDS_START+' kg</b></span>'
+    +'<span class="kpi">Objectif : <b>'+POIDS_GOAL+' kg</b></span>'
+    +'<span class="kpi">Perdu : <b>'+(pNow!=null?fx(POIDS_START-pNow)+' kg':'—')+'</b></span>'
+    +'<span class="kpi">Streak : <b>'+calcStreak()+' j</b></span>'
+    +'<span class="kpi">Semaines enregistrées : <b>'+allWeeks.length+'</b></span>'
+    +'</div>';
+
+  // Boss vaincus (tous)
+  var st0=getStore(), allBoss=[];
+  SKILLS.forEach(function(sk){
+    (BOSSES[sk.id]||[]).forEach(function(b){
+      if(st0.bosses&&st0.bosses[b.id])allBoss.push({sk:sk.name,n:b.name,xp:b.xp,d:new Date(st0.bosses[b.id])});
+    });
+  });
+  allBoss.sort(function(a,b){return a.d-b.d;});
+  html+='<h3>👹 Boss vaincus ('+allBoss.length+'/27)</h3>';
+  if(allBoss.length){
+    html+='<table><tr><th>Date</th><th>Compétence</th><th>Boss</th><th>XP</th></tr>';
+    allBoss.forEach(function(b){
+      var inCyc = b.d>=sd && b.d < new Date(sd.getTime()+ (cn*4)*7*86400000) && b.d >= new Date(sd.getTime()+((cn-1)*4)*7*86400000);
+      html+='<tr><td>'+b.d.toLocaleDateString('fr-FR')+(inCyc?' ⭐':'')+'</td><td>'+esc(b.sk)+'</td><td>'+esc(b.n)+'</td><td>+'+b.xp+'</td></tr>';
+    });
+    html+='</table><p class="muted">⭐ = vaincu pendant ce cycle</p>';
+  } else html+='<p class="muted">Aucun boss vaincu pour l\u2019instant.</p>';
+
+  // ════ 2. SYNTHÈSE DU CYCLE ════
+  html+='<h2>📊 Synthèse du cycle '+cn+'</h2>';
+  var dp=(c.poidsFirst!=null&&c.poidsLast!=null)?fx(c.poidsLast-c.poidsFirst):null;
   html+='<div>'
     +'<span class="kpi">Semaines : <b>'+c.weeks+'/4</b></span>'
     +'<span class="kpi">Quêtes : <b>'+c.quests+'</b></span>'
     +'<span class="kpi">Séries cali : <b>'+c.series+'</b></span>'
-    +'<span class="kpi">Tonnage élastique : <b>'+c.tonnage.toLocaleString('fr-FR')+' kg</b></span>'
+    +'<span class="kpi">Tonnage : <b>'+c.tonnage.toLocaleString('fr-FR')+' kg</b></span>'
     +'<span class="kpi">Course : <b>'+c.runMin+' min</b></span>'
-    +'<span class="kpi">Distance : <b>'+(Math.round(c.runKm*10)/10)+' km</b></span>'
+    +'<span class="kpi">Distance : <b>'+fx(c.runKm)+' km</b></span>'
     +'<span class="kpi">Max pompes : <b>'+(c.pompes||'—')+'</b></span>'
     +'<span class="kpi">Max planche : <b>'+(c.planche?c.planche+' s':'—')+'</b></span>'
     +'<span class="kpi">Poids : <b>'+(dp!=null?(dp>0?'+':'')+dp+' kg':'—')+'</b></span>'
     +'</div>';
   if(prev){
     var sp=[];
-    if(c.pompes&&prev.pompes)sp.push('Pompes '+(c.pompes>=prev.pompes?'↗ +'+(c.pompes-prev.pompes):'↘ '+(c.pompes-prev.pompes)));
-    if(c.planche&&prev.planche)sp.push('Planche '+(c.planche>=prev.planche?'↗ +'+(c.planche-prev.planche)+'s':'↘ '+(c.planche-prev.planche)+'s'));
-    if(c.tonnage&&prev.tonnage)sp.push('Tonnage '+(c.tonnage>=prev.tonnage?'↗ +'+(c.tonnage-prev.tonnage):'↘ '+(c.tonnage-prev.tonnage))+' kg');
-    if(sp.length)html+='<div class="spiral">🌀 <b>Spirale C'+prev.n+'→C'+cn+'</b> : '+sp.join(' · ')+'</div>';
+    function cmp(lbl,a,b,u){ if(!a||!b)return; var d=a-b; sp.push(lbl+' '+(d>=0?'↗ +'+fx(d):'↘ '+fx(d))+(u||'')); }
+    cmp('Pompes',c.pompes,prev.pompes);
+    cmp('Planche',c.planche,prev.planche,'s');
+    cmp('Course',c.runMax,prev.runMax,' min');
+    cmp('Tonnage',c.tonnage,prev.tonnage,' kg');
+    if(sp.length)html+='<div class="box">🌀 <b>Spirale C'+prev.n+'→C'+cn+'</b> : '+sp.join(' · ')+'</div>';
   }
-  // Détail par semaine et par séance
-  html+='<h2>📅 Détail des séances</h2>';
-  weekKeys.forEach(function(dn){
-    var s;try{s=JSON.parse(localStorage.getItem(KEY_PREFIX+dn));}catch(e){return;}
-    if(!s||!s.days)return;
-    var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
-    html+='<h3>Semaine du '+pd(mon.getDate())+'/'+pd(mon.getMonth()+1)+(s.label?' — '+esc(s.label):'')+'</h3>';
-    s.days.forEach(function(d,di){
+
+  // ════ 3. TABLEAU SEMAINE PAR SEMAINE ════
+  html+='<h2>📈 Évolution semaine par semaine</h2>';
+  var vol=getWeeklyVolume(), ton=getWeeklyTonnage();
+  var vMap={},tMap={};
+  vol.forEach(function(x){vMap[x.key]=x;}); ton.forEach(function(x){tMap[x.key]=x;});
+  html+='<table><tr><th>Semaine</th><th>Cycle</th><th>Phase</th><th>Quêtes</th><th>Séries</th><th>Tonnage</th><th>Course</th><th>Dist.</th><th>Poids</th><th>XP</th><th>DR moy</th><th>FC moy</th></tr>';
+  allWeeks.forEach(function(w){
+    var days=w.s.days||[];
+    var q=days.filter(function(d){return d.done==='yes'||d.done==='mvw';}).length;
+    var drs=[],fcs=[];
+    days.forEach(function(d){ var sc=drScore(d); if(sc!=null)drs.push(sc); if(+d.fc)fcs.push(+d.fc); });
+    var v=vMap[w.key]||{}, t=tMap[w.key]||{};
+    var phase=w.cw?(CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'—'):'—';
+    var hi = w.cyc===cn;
+    html+='<tr'+(hi?' class="tot"':'')+'><td>'+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+'</td><td>C'+(w.cyc||'—')+'</td><td>'+esc(phase)+'</td><td>'+q+'/5</td><td>'+(v.series||0)+'</td><td>'+(t.kg||0)+' kg</td><td>'+(v.runMin||0)+' min</td><td>'+fx(v.runKm||0)+' km</td><td>'+(w.s.poids?w.s.poids+' kg':'—')+'</td><td>'+(w.s.xpWeek||0)+'</td>'
+      +'<td>'+(drs.length?Math.round(drs.reduce(function(a,b){return a+b;},0)/drs.length)+'/40':'—')+'</td>'
+      +'<td>'+(fcs.length?Math.round(fcs.reduce(function(a,b){return a+b;},0)/fcs.length)+' bpm':'—')+'</td></tr>';
+  });
+  html+='</table><p class="muted">Lignes surlignées = cycle '+cn+'</p>';
+
+  // ════ 4. RECORDS (PR) ════
+  html+='<h2>🏆 Records personnels</h2>';
+  var best={};
+  allWeeks.forEach(function(w){
+    var dlbl=pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+'/'+w.mon.getFullYear();
+    (w.s.days||[]).forEach(function(d,di){
+      var dt=new Date(w.mon); dt.setDate(w.mon.getDate()+di);
+      Object.keys(d.sets||{}).forEach(function(exo){
+        var isT=/planche|gainage|l-sit|hollow|chaise|superman/i.test(exo);
+        (d.sets[exo]||[]).forEach(function(v){
+          v=+v; if(!v)return;
+          if(!best[exo]||v>best[exo].v)best[exo]={v:v,u:isT?'s':'reps',d:dt,cyc:w.cyc};
+        });
+      });
+      if(d.run&&+d.run.dur){var rv=+d.run.dur; if(!best['🏃 Course (durée)']||rv>best['🏃 Course (durée)'].v)best['🏃 Course (durée)']={v:rv,u:'min',d:dt,cyc:w.cyc};}
+      if(d.run&&+d.run.km){var rk=+d.run.km; if(!best['🏃 Course (distance)']||rk>best['🏃 Course (distance)'].v)best['🏃 Course (distance)']={v:rk,u:'km',d:dt,cyc:w.cyc};}
+    });
+  });
+  var bk=Object.keys(best).sort();
+  if(bk.length){
+    html+='<table><tr><th>Exercice</th><th>Record</th><th>Date</th><th>Cycle</th></tr>';
+    bk.forEach(function(n){var b=best[n];
+      html+='<tr><td>'+esc(n)+'</td><td><b>'+b.v+' '+b.u+'</b></td><td>'+b.d.toLocaleDateString('fr-FR')+'</td><td>C'+(b.cyc||'—')+(b.cyc===cn?' ⭐':'')+'</td></tr>';});
+    html+='</table><p class="muted">⭐ = record établi pendant ce cycle</p>';
+  } else html+='<p class="muted">Aucun record enregistré.</p>';
+
+  // ════ 5. RÉCUPÉRATION : DR / FC / VO2max / courbatures ════
+  html+='<h2>❤️ Récupération &amp; charge (cycle '+cn+')</h2>';
+  var drAll=[],fcAll=[],vo2All=[],zoneCount={};
+  cycWeeks.forEach(function(w){
+    (w.s.days||[]).forEach(function(d){
+      var sc=drScore(d); if(sc!=null)drAll.push(sc);
+      if(+d.fc)fcAll.push(+d.fc);
+      if(+d.vo2)vo2All.push(+d.vo2);
+      (d.zones||[]).forEach(function(z){zoneCount[z]=(zoneCount[z]||0)+1;});
+    });
+  });
+  function avg(a){return a.length?Math.round(a.reduce(function(x,y){return x+y;},0)/a.length*10)/10:null;}
+  html+='<div>'
+    +'<span class="kpi">DR moyen : <b>'+(avg(drAll)!=null?avg(drAll)+'/40':'—')+'</b></span>'
+    +'<span class="kpi">FC repos moy : <b>'+(avg(fcAll)!=null?avg(fcAll)+' bpm':'—')+'</b></span>'
+    +'<span class="kpi">FC min/max : <b>'+(fcAll.length?Math.min.apply(null,fcAll)+' / '+Math.max.apply(null,fcAll):'—')+'</b></span>'
+    +'<span class="kpi">VO2max : <b>'+(vo2All.length?vo2All[0]+' → '+vo2All[vo2All.length-1]:'—')+'</b></span>'
+    +'</div>';
+  var zk=Object.keys(zoneCount).sort(function(a,b){return zoneCount[b]-zoneCount[a];});
+  if(zk.length){
+    html+='<h4>Zones de courbatures les plus fréquentes</h4><table><tr><th>Zone</th><th>Occurrences</th></tr>';
+    zk.forEach(function(z){html+='<tr><td>'+esc(z)+'</td><td>'+zoneCount[z]+'</td></tr>';});
+    html+='</table>';
+  }
+
+  // ════ 6. RADAR MUSCULAIRE ════
+  try{
+    var scSave=statsScope; statsScope='all';
+    var msc=calcMuscles(); statsScope=scSave;
+    var mmax=Math.max.apply(null,msc.concat([1]));
+    html+='<h2>💪 Radar musculaire (cumul)</h2><table><tr><th>Groupe</th><th>Volume relatif</th><th>Alerte</th></tr>';
+    MUSCLE_AXES.forEach(function(m,i){var pc=Math.round(msc[i]/mmax*100);
+      html+='<tr><td>'+esc(m)+'</td><td>'+pc+'%</td><td>'+(pc<30?'<span class="bad">⚠️ sous-travaillé</span>':'<span class="ok">OK</span>')+'</td></tr>';});
+    html+='</table>';
+  }catch(e){}
+
+  // ════ 7. NUTRITION JOUR PAR JOUR ════
+  html+='<h2>🍎 Nutrition — détail quotidien (cycle '+cn+')</h2>';
+  var nRows='',nk=0,np=0,ncb=0,nl=0,nw=0,nn=0;
+  cycWeeks.forEach(function(w){
+    for(var dd=0;dd<7;dd++){
+      var dt=new Date(w.mon); dt.setDate(w.mon.getDate()+dd);
+      var kk=dt.getFullYear()+'-'+pd(dt.getMonth()+1)+'-'+pd(dt.getDate());
+      var log=nutLog[kk]; if(!log||!log.meals)continue;
+      var t=nutTotals(kk).t; if(!(t.k>0))continue;
+      var wat=(log.water||0);
+      nk+=t.k;np+=t.p;ncb+=t.c;nl+=t.l;nw+=wat;nn++;
+      function d2(v,g){var x=Math.round(v-g);return (x>0?'<span class="bad">+'+x+'</span>':'<span class="ok">'+x+'</span>');}
+      nRows+='<tr><td>'+DN[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+'</td>'
+        +'<td>'+Math.round(t.k)+'</td><td>'+d2(t.k,nutGoals.kcal)+'</td>'
+        +'<td>'+Math.round(t.p)+'</td><td>'+Math.round(t.c)+'</td><td>'+Math.round(t.l)+'</td>'
+        +'<td>'+fx(wat/1000)+' L</td></tr>';
+    }
+  });
+  if(nn){
+    html+='<table><tr><th>Jour</th><th>kcal</th><th>Écart</th><th>P (g)</th><th>G (g)</th><th>L (g)</th><th>Eau</th></tr>'+nRows
+      +'<tr class="tot"><td>MOYENNE ('+nn+' j)</td><td>'+Math.round(nk/nn)+'</td><td>'+Math.round(nk/nn-nutGoals.kcal)+'</td>'
+      +'<td>'+Math.round(np/nn)+'</td><td>'+Math.round(ncb/nn)+'</td><td>'+Math.round(nl/nn)+'</td><td>'+fx(nw/nn/1000)+' L</td></tr>'
+      +'<tr><td>CIBLE</td><td>'+nutGoals.kcal+'</td><td>—</td><td>'+nutGoals.prot+'</td><td>'+nutGoals.carb+'</td><td>'+nutGoals.fat+'</td><td>'+fx(nutGoals.water/1000)+' L</td></tr></table>';
+    var bilanKcal=Math.round((nk/nn-nutGoals.kcal)*nn);
+    html+='<p>Bilan calorique du cycle : <b>'+(bilanKcal>0?'+':'')+bilanKcal+' kcal</b> cumulés vs cible ('+(bilanKcal<0?'déficit':'excédent')+' théorique ≈ '+fx(Math.abs(bilanKcal)/7700)+' kg)</p>';
+    if(nn<cycWeeks.length*7)html+='<div class="warn">⚠️ '+(cycWeeks.length*7-nn)+' jour(s) non saisi(s) — les moyennes sont à interpréter avec prudence.</div>';
+  } else html+='<p class="muted">Aucune journée nutrition saisie sur ce cycle.</p>';
+
+  // ════ 8. DÉTAIL DES SÉANCES ════
+  html+='<h2>📅 Détail des séances du cycle '+cn+'</h2>';
+  cycWeeks.forEach(function(w){
+    var phase=w.cw&&CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'';
+    html+='<h3>Semaine '+w.cw+'/4 — '+esc(phase)+' (du '+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+')'
+      +(w.s.poids?' · Poids : '+w.s.poids+' kg':'')+(w.s.xpWeek?' · '+w.s.xpWeek+' XP':'')+'</h3>';
+    (w.s.days||[]).forEach(function(d,di){
       var wo=WORKOUTS[d.type]||{label:d.woLabel||d.type,exos:[]};
-      if(wo.isRest&&(!d.done||d.done==='rest'))return;
-      var dt=new Date(mon);dt.setDate(mon.getDate()+di);
-      var statusMap={yes:'✓ Réalisée',mvw:'⚡ MVW',no:'✗ Skippée',rest:'Repos'};
-      var st=statusMap[d.done]||'—';
-      var head=DAYNAMES[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+' — '+esc(wo.label||d.type)+' ['+st+']';
+      var dt=new Date(w.mon); dt.setDate(w.mon.getDate()+di);
+      if((wo.isRest||!wo.exos||!wo.exos.length)&&!d.notes&&!d.done)return;
+      var stM={yes:'✓ Réalisée',mvw:'⚡ MVW 15min',no:'✗ Skippée',rest:'😴 Repos'};
+      html+='<h4>'+DN[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+' — '+esc(d.woLabel||wo.label||d.type)+' ['+(stM[d.done]||'non renseignée')+']</h4>';
+      var sc=drScore(d), meta=[];
+      if(sc!=null){var vv=drVerdict(sc); meta.push('DR '+sc+'/40'+(vv?' ('+vv.txt+')':''));}
+      if(d.fc)meta.push('FC repos '+d.fc+' bpm');
+      if(d.vo2)meta.push('VO2max '+d.vo2);
+      if(d.note)meta.push('Ressenti séance '+d.note+'/10');
+      if(d.zones&&d.zones.length)meta.push('Courbatures : '+d.zones.join(', '));
+      if(meta.length)html+='<p class="muted" style="margin:2px 0 4px">'+esc(meta.join(' · '))+'</p>';
       var rows='';
       (wo.exos||[]).forEach(function(e){
         var v=(d.sets&&d.sets[e.n]||[]).filter(function(x){return x!==''&&x!=null;});
         if(!v.length&&!e.sets)return;
         var band=(d.elastic||{})[e.n]||e.band||'';
-        rows+='<tr><td>'+esc(e.n)+'</td><td>'+esc(e.g||'')+'</td><td>'+(v.length?v.join(' / '):'—')+'</td><td>'+esc(band)+'</td></tr>';
+        var kg=band?bandKg(band):0;
+        var tot=kg&&v.length?v.reduce(function(a,b){return a+(+b);},0)*kg:0;
+        rows+='<tr><td>'+esc(e.c||'')+'</td><td>'+esc(e.n)+'</td><td>'+esc(e.g||'')+'</td><td>'+esc(e.t||'')+'</td><td><b>'+(v.length?v.join(' / '):'—')+'</b></td><td>'+esc(band)+(kg?' ('+kg+'kg)':'')+'</td><td>'+(tot?tot+' kg':'')+'</td></tr>';
       });
-      if(d.run&&(d.run.dur||d.run.km))rows+='<tr><td>Course</td><td>Course à pied</td><td>'+(d.run.dur||'—')+' min'+(d.run.km?' · '+d.run.km+' km':'')+'</td><td></td></tr>';
-      html+='<p style="margin:8px 0 2px"><b>'+head+'</b></p>';
-      var sc=drScore(d);
-      var meta=[];
-      if(sc!=null)meta.push('DR '+sc+'/40');
-      if(d.fc)meta.push('FC repos '+d.fc);
-      if(d.vo2)meta.push('VO2max '+d.vo2);
-      if(d.note)meta.push('Note '+d.note+'/10');
-      if(meta.length)html+='<p class="muted" style="margin:0 0 4px">'+meta.join(' · ')+'</p>';
-      if(rows)html+='<table><tr><th>Exercice</th><th>Nom Garmin</th><th>Résultats</th><th>Élastique</th></tr>'+rows+'</table>';
-      if(d.notes)html+='<p class="muted">Ressenti : '+esc(d.notes)+'</p>';
+      if(d.run&&(d.run.dur||d.run.km))rows+='<tr><td>Course</td><td>Sortie</td><td>Course à pied</td><td>—</td><td><b>'+(d.run.dur||'—')+' min'+(d.run.km?' · '+d.run.km+' km':'')+'</b></td><td></td><td></td></tr>';
+      if(rows)html+='<table><tr><th>Circuit</th><th>Exercice</th><th>Nom Garmin</th><th>Cible</th><th>Réalisé</th><th>Élastique</th><th>Tonnage</th></tr>'+rows+'</table>';
+      if(d.notes)html+='<p class="muted"><i>Ressenti : '+esc(d.notes)+'</i></p>';
     });
   });
-  // Radar musculaire (scope global sur le cycle approximé via all)
-  try{
-    var scSave=statsScope; statsScope='all';
-    var msc=calcMuscles(); statsScope=scSave;
-    var mmax=Math.max.apply(null,msc.concat([1]));
-    html+='<h2>💪 Radar musculaire (cumul)</h2><table><tr><th>Groupe</th><th>% du plus travaillé</th></tr>';
-    MUSCLE_AXES.forEach(function(m,i){var pc=Math.round(msc[i]/mmax*100);html+='<tr><td>'+esc(m)+'</td><td>'+pc+'%'+(pc<30?' ⚠️':'')+'</td></tr>';});
-    html+='</table>';
-  }catch(e){}
-  // Nutrition moyenne du cycle
-  try{
-    var nk=0,np=0,nc=0,nl=0,nn=0;
-    weekKeys.forEach(function(dn){
-      var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
-      for(var dd=0;dd<7;dd++){
-        var dt=new Date(mon);dt.setDate(mon.getDate()+dd);
-        var kk=dt.getFullYear()+'-'+pd(dt.getMonth()+1)+'-'+pd(dt.getDate());
-        var log=nutLog[kk]; if(!log||!log.meals)continue;
-        var t=nutTotals(kk).t; if(t.k>0){nk+=t.k;np+=t.p;nc+=t.c;nl+=t.l;nn++;}
-      }
-    });
-    if(nn){html+='<h2>🍎 Nutrition moyenne ('+nn+' jours saisis)</h2>';
-      html+='<table><tr><th>Métrique</th><th>Moyenne/j</th><th>Cible</th></tr>'
-        +'<tr><td>Calories</td><td>'+Math.round(nk/nn)+' kcal</td><td>'+nutGoals.kcal+'</td></tr>'
-        +'<tr><td>Protéines</td><td>'+Math.round(np/nn)+' g</td><td>'+nutGoals.prot+'</td></tr>'
-        +'<tr><td>Glucides</td><td>'+Math.round(nc/nn)+' g</td><td>'+nutGoals.carb+'</td></tr>'
-        +'<tr><td>Lipides</td><td>'+Math.round(nl/nn)+' g</td><td>'+nutGoals.fat+'</td></tr></table>';
-    }
-  }catch(e){}
-  html+='<p class="muted" style="margin-top:24px">« Le deload oui, l\u2019arrêt jamais. » — Sport Ascension</p>';
+
+  html+='<p class="muted" style="margin-top:26px;border-top:1px solid #ddd;padding-top:8px">« Le deload oui, l\u2019arrêt jamais. » — Sport Ascension '+APP_VERSION+'</p>';
   html+='</body></html>';
+
   var blob=new Blob(['\ufeff'+html],{type:'application/msword'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='ascension_cycle'+cn+'_detail.doc';
   a.click();URL.revokeObjectURL(a.href);
-  toast('📄 Document du cycle '+cn+' exporté');
+  toast('📄 Document complet du cycle '+cn+' exporté');
 }
 // ══════════ PHOTOS DE PROGRESSION ══════════
 function progPhotosGet(){try{return JSON.parse(localStorage.getItem('sa_prog_photos')||'[]');}catch(e){return [];}}
@@ -3168,16 +3313,86 @@ function nutEditItem(mid,ii){
   nutPrev();
 }
 function nutCloseModal(){document.getElementById('nutModal').classList.remove('show');}
+var nutLastQty={}; // dernière quantité utilisée par aliment
+// Fréquence d'usage des aliments (pour remonter les habituels en tête)
+function nutUsage(){
+  var freq={},last={};
+  Object.keys(nutLog).forEach(function(d){
+    var meals=(nutLog[d]||{}).meals||{};
+    Object.keys(meals).forEach(function(m){
+      (meals[m]||[]).forEach(function(it){
+        if(!it||!it.n)return;
+        freq[it.n]=(freq[it.n]||0)+1;
+        if(!last[it.n]||d>last[it.n])last[it.n]=d;
+        // mémorise la dernière quantité utilisée
+        if(it.qty)nutLastQty[it.n]=it.qty;
+      });
+    });
+  });
+  return {freq:freq,last:last};
+}
+// Ajout express : un tap = aliment ajouté avec ta quantité habituelle
+function nutQuickAdd(idx){
+  var f=nutAllF()[idx]; if(!f)return;
+  var q=nutLastQty[f.n]||f.por||100;
+  nutMeal(nutCurD,nutSelM).push({idx:idx,n:f.n,qty:q});
+  nutSave();nutCloseModal();renderNutri();
+  toast('\u2705 '+f.n+' \u00b7 '+q+'g');
+}
+// Copier tous les repas d'un jour précédent
+function nutCopyDay(offset){
+  var d=new Date(nutCurD+'T12:00:00');
+  d.setDate(d.getDate()+offset);
+  var src=d.getFullYear()+'-'+pd(d.getMonth()+1)+'-'+pd(d.getDate());
+  var s=nutLog[src];
+  if(!s||!s.meals){toast('Rien à copier depuis le '+pd(d.getDate())+'/'+pd(d.getMonth()+1));return;}
+  var n=0;
+  Object.keys(s.meals).forEach(function(m){
+    (s.meals[m]||[]).forEach(function(it){ nutMeal(nutCurD,m).push({idx:it.idx,n:it.n,qty:it.qty}); n++; });
+  });
+  if(!n){toast('Journée vide, rien à copier');return;}
+  nutSave();renderNutri();
+  toast('\ud83d\udccb '+n+' aliment(s) copiés depuis le '+pd(d.getDate())+'/'+pd(d.getMonth()+1));
+}
 function nutModalList(){
   var q=normS(document.getElementById('nutModalSearch').value||'');
   var foods=nutAllF();
-  var out='';var n=0;
-  foods.forEach(function(f,idx){
+  var u=nutUsage();
+  var out='';
+  // ── Sans recherche : tes aliments habituels d'abord, en ajout express ──
+  if(!q){
+    var tops=Object.keys(u.freq).sort(function(a,b){
+      var d=u.freq[b]-u.freq[a]; if(d)return d;
+      return (u.last[b]||'').localeCompare(u.last[a]||'');
+    }).slice(0,8);
+    var quick='';
+    tops.forEach(function(nm){
+      for(var i=0;i<foods.length;i++){
+        if(foods[i].n===nm){
+          var qq=nutLastQty[nm]||foods[i].por||100;
+          quick+='<button class="mini-btn" style="min-height:38px;padding:7px 10px;font-size:11px;border-color:var(--border2);margin:0 5px 5px 0" onclick="nutQuickAdd('+i+')">'
+            +'\u26a1 '+foods[i].n+' <span style="color:var(--muted2);font-size:9.5px">'+qq+'g</span></button>';
+          break;
+        }
+      }
+    });
+    if(quick)out+='<div style="font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;font-weight:800;margin:2px 0 7px">\u26a1 Tes habituels \u2014 1 tap pour ajouter</div>'
+      +'<div style="display:flex;flex-wrap:wrap;margin-bottom:12px">'+quick+'</div>'
+      +'<div style="font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;font-weight:800;margin-bottom:6px">Tous les aliments</div>';
+  }
+  var n=0;
+  // tri : les plus utilisés d'abord même en recherche
+  var sorted=foods.map(function(f,idx){return {f:f,idx:idx,c:u.freq[f.n]||0};})
+    .sort(function(a,b){return b.c-a.c;});
+  sorted.forEach(function(o){
+    var f=o.f;
     if(q&&normS(f.n).indexOf(q)<0)return;
     if(n>=40)return;n++;
-    out+='<div class="food-card" style="cursor:pointer" onclick="nutSelect('+idx+')">'
-      +'<div style="flex:1;min-width:0"><div class="fc-name">'+f.n+'</div>'
+    var qq=nutLastQty[f.n]||f.por||100;
+    out+='<div class="food-card" style="cursor:pointer" onclick="nutSelect('+o.idx+')">'
+      +'<div style="flex:1;min-width:0"><div class="fc-name">'+f.n+(o.c?' <span style="color:var(--gold2);font-size:9px">\u00d7'+o.c+'</span>':'')+'</div>'
       +'<div class="fc-mac">P '+f.p+' \u00b7 G '+f.c+' \u00b7 L '+f.l+' /100g</div></div>'
+      +'<button class="mini-btn" style="padding:5px 8px;min-height:0;font-size:10px;border-color:var(--border2);margin-right:6px" onclick="event.stopPropagation();nutQuickAdd('+o.idx+')">\u26a1'+qq+'g</button>'
       +'<span class="fc-kcal">'+f.k+'</span></div>';
   });
   document.getElementById('nutModalFoods').innerHTML=out||'<div style="text-align:center;padding:12px;color:var(--muted);font-size:11px">Aucun r\u00e9sultat</div>';
