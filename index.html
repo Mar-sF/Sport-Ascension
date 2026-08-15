@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark" style="color-scheme:dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0a14">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -17,6 +19,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Exo+2:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
+  color-scheme: dark only;
+  forced-color-adjust: none;
   --bg:#0b0a14;--bg2:#141221;--bg3:#1c1930;--bg4:#262242;
   --border:rgba(201,168,76,.28);--border2:rgba(201,168,76,.45);
   --gold:#e3c26b;--gold2:#c9a227;--xp:#a78bfa;
@@ -24,8 +28,13 @@
   --text:#f0ece0;--muted:#9691a8;--muted2:#c4bfd2;
   --r:12px;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;overscroll-behavior-x:none}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;forced-color-adjust:none}
+/* Neutralise le dark mode forcé des navigateurs (Samsung Internet, Chrome auto-dark) */
+@media (prefers-color-scheme: light){:root{color-scheme:dark only}body{background:#0b0a14;color:#f0ece0}}
+@media (forced-colors: active){*{forced-color-adjust:none !important}}
+html,body{-webkit-text-fill-color:currentColor}
+html{color-scheme:dark only;background:#0b0a14}
+body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;overscroll-behavior-x:none;forced-color-adjust:none}
 body::before{content:'';position:fixed;inset:0;background:
   radial-gradient(ellipse 120% 50% at 50% -10%,rgba(167,139,250,.09),transparent 60%),
   radial-gradient(ellipse 80% 40% at 50% 110%,rgba(201,162,39,.05),transparent 60%);
@@ -346,7 +355,6 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 <!-- ═══ DASHBOARD / PERSONNAGE ═══ -->
 <div id="tab-dash" class="panel active">
   <div id="heroBox"></div>
-  <div id="todayBox"></div>
   <div class="sec">Compétences</div>
   <div class="skill-grid" id="skillGrid"></div>
   <div class="sec">Cette semaine</div>
@@ -891,32 +899,6 @@ function renderHeader(){
   document.getElementById('hdXp').style.width = Math.round(tot/5*100)+'%';
 }
 
-// Encart "Aujourd'hui" : état de préparation de la séance du jour
-function renderToday(idx){
-  var el=document.getElementById('todayBox'); if(!el)return;
-  if(idx<0){el.innerHTML='';return;}
-  var wOffSave=weekOff; weekOff=0;
-  var s=getStore(); weekOff=wOffSave;
-  var day=s.days[idx], wo=WORKOUTS[day.type]||{isRest:true};
-  if(wo.isRest){el.innerHTML='';return;}
-  var isDone=['yes','mvw','no','rest'].includes(day.done);
-  if(isDone){el.innerHTML='';return;} // déjà traité, le hero suffit
-  var items=[];
-  var sc=drScore(day);
-  if(sc==null)items.push('\u26a0\ufe0f DR check non rempli \u2014 remplis-le pour adapter le volume');
-  else{
-    var dvf=drVolumeFactor(day);
-    if(dvf===0)items.push('\ud83d\uded1 DR bas \u2014 repos conseill\u00e9 aujourd\u2019hui');
-    else if(dvf!=null&&dvf<1)items.push('\u26a1 DR fatigue \u2014 cibles r\u00e9duites \u00d7'+dvf.toFixed(2));
-    else items.push('\u2705 DR OK ('+sc+'/40) \u2014 s\u00e9ance standard');
-  }
-  if(!day.fc)items.push('\u2764\ufe0f FC repos du matin non saisie');
-  el.innerHTML='<div class="card" style="border-color:var(--gold2);margin-top:2px">'
-    +'<div style="font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;font-weight:800;margin-bottom:6px">\u00c0 pr\u00e9parer aujourd\u2019hui</div>'
-    +items.map(function(x){return '<div style="font-size:11.5px;color:var(--text);padding:2px 0">'+x+'</div>';}).join('')
-    +'<button class="btn btn-out" style="width:100%;margin-top:8px" onclick="goToDay('+idx+')">Ouvrir la s\u00e9ance</button>'
-  +'</div>';
-}
 // ══════════ DASHBOARD ══════════
 function renderDash(){
   // Hero séance du jour
@@ -931,14 +913,29 @@ function renderDash(){
     var isDone=['yes','mvw','no','rest'].includes(day.done);
     var doneL={yes:'\u2713 Qu\u00eate accomplie',mvw:'\u26a1 MVW fait \u2014 streak ok',no:'\u2717 Skipp\u00e9e',rest:'\ud83d\ude34 Repos'};
     var icon=wo.isRest?'\ud83c\udf71':(day.type.indexOf('run')===0?'\ud83c\udfc3':'\u2694\ufe0f');
+    // Infos de préparation intégrées (ex-encadré "À préparer")
+    var prep='';
+    if(!wo.isRest&&!isDone){
+      var bits=[], sc=drScore(day);
+      if(sc==null)bits.push('<span style="color:var(--orange)">\u26a0\ufe0f DR non rempli</span>');
+      else{
+        var dvf=drVolumeFactor(day);
+        if(dvf===0)bits.push('<span style="color:#f87171">\ud83d\uded1 DR bas \u2014 repos conseill\u00e9</span>');
+        else if(dvf!=null&&dvf<1)bits.push('<span style="color:var(--orange)">\u26a1 DR '+sc+'/40 \u2014 cibles \u00d7'+dvf.toFixed(2)+'</span>');
+        else bits.push('<span style="color:var(--green)">\u2705 DR '+sc+'/40</span>');
+      }
+      if(day.type.indexOf('run')===0&&!day.vo2)bits.push('VO2max \u00e0 saisir');
+      if(!day.fc)bits.push('FC repos \u00e0 saisir');
+      if(bits.length)prep='<div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">'+bits.join(' \u00b7 ')+'</div>';
+    }
     hb.innerHTML='<div class="hero"><div class="hero-icon">'+icon+'</div>'
-      +'<div><div class="hero-kick">Qu\u00eate du jour \u2014 '+DAY_NAMES[idx]+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="hero-kick">Qu\u00eate du jour \u2014 '+DAY_NAMES[idx]+'</div>'
       +'<div class="hero-label">'+wo.label+'</div>'
-      +'<div class="hero-meta">'+(isDone?doneL[day.done]:(wo.dur||'Repos bien m\u00e9rit\u00e9'))+'</div></div>'
+      +'<div class="hero-meta">'+(isDone?doneL[day.done]:(wo.dur||'Repos bien m\u00e9rit\u00e9'))+'</div>'
+      +prep+'</div>'
       +(!wo.isRest?'<button class="hero-btn" onclick="goToDay('+idx+')">'+(isDone?'Voir':'GO')+'</button>':'')
       +'</div>';
   } else hb.innerHTML='';
-  renderToday(idx);
 
   // Skills mini-cards
   var lv=allLevels(), x=getXp();
