@@ -354,6 +354,7 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
 
 <!-- ═══ DASHBOARD / PERSONNAGE ═══ -->
 <div id="tab-dash" class="panel active">
+  <div id="avatarBox"></div>
   <div id="heroBox"></div>
   <div class="sec">Compétences</div>
   <div class="skill-grid" id="skillGrid"></div>
@@ -900,11 +901,74 @@ function renderHeader(){
 }
 
 // ══════════ DASHBOARD ══════════
+// ══════════ AVATAR ÉVOLUTIF ══════════
+function todayIdx(){
+  var dates=getDates(0), todayStr=new Date().toDateString(), idx=-1;
+  dates.forEach(function(d,i){ if(d.toDateString()===todayStr) idx=i; });
+  return idx;
+}
+var AVATAR_TIERS=[1,10,20,30,35,40,50,65,80,99];
+function avatarTier(lvl){
+  var t=AVATAR_TIERS[0];
+  for(var i=0;i<AVATAR_TIERS.length;i++){ if(lvl>=AVATAR_TIERS[i])t=AVATAR_TIERS[i]; }
+  return t;
+}
+// Humeur du jour : happy (séance faite), neutral (à faire), sad (skippée / streak cassée)
+function avatarMood(){
+  var wOffSave=weekOff; weekOff=0;
+  var s=getStore(); weekOff=wOffSave;
+  var idx=todayIdx();
+  if(idx<0)return 'neutral';
+  var day=s.days[idx], wo=WORKOUTS[day.type]||{isRest:true};
+  if(day.done==='no')return 'sad';
+  if(day.done==='yes'||day.done==='mvw')return 'happy';
+  if(wo.isRest)return 'neutral';
+  // séance du jour pas encore faite : triste seulement si la veille a été skippée
+  var prev=idx>0?s.days[idx-1]:null;
+  if(prev&&prev.done==='no')return 'sad';
+  return 'neutral';
+}
+function renderAvatar(){
+  var el=document.getElementById('avatarBox'); if(!el)return;
+  var gl=globalLevel(), tier=avatarTier(gl), mood=avatarMood();
+  var next=null;
+  for(var i=0;i<AVATAR_TIERS.length;i++){ if(AVATAR_TIERS[i]>gl){next=AVATAR_TIERS[i];break;} }
+  var moodMeta={
+    happy:{ic:'\ud83d\udd25',txt:'Quête accomplie',col:'var(--green)',glow:'rgba(74,222,128,.35)'},
+    neutral:{ic:'\u2694\ufe0f',txt:'En attente de la quête',col:'var(--gold)',glow:'rgba(227,194,107,.28)'},
+    sad:{ic:'\ud83d\udca4',txt:'Séance manquée — reprends demain',col:'var(--muted2)',glow:'rgba(150,145,168,.2)'}
+  }[mood];
+  var src='./avatars/lvl'+tier+'_'+mood+'.png';
+  var fb1='./avatars/lvl'+tier+'_neutral.png';
+  var fb2='./avatars/lvl'+tier+'.png';
+  el.innerHTML='<div class="card" style="display:flex;gap:14px;align-items:center;border-color:'+moodMeta.col+';box-shadow:0 0 18px '+moodMeta.glow+'">'
+    +'<div style="position:relative;flex-shrink:0">'
+      +'<img id="avatarImg" src="'+src+'" alt="Avatar niveau '+gl+'" '
+      +'style="width:96px;height:126px;object-fit:cover;object-position:top center;border-radius:12px;border:1.5px solid '+moodMeta.col+';background:var(--bg3);'
+      +(mood==='sad'?'filter:saturate(.45) brightness(.7);':(mood==='happy'?'filter:saturate(1.12) brightness(1.06);':''))+'" '
+      +'onerror="avatarFallback(this,\''+fb1+'\',\''+fb2+'\')">'
+      +'<div style="position:absolute;bottom:-6px;right:-6px;background:var(--bg2);border:1.5px solid '+moodMeta.col+';border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px">'+moodMeta.ic+'</div>'
+    +'</div>'
+    +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.6px;font-weight:800">Ton avatar</div>'
+      +'<div style="font-family:\'Cinzel\',serif;font-size:17px;font-weight:700;color:var(--text);margin:2px 0">Niveau '+gl+'</div>'
+      +'<div style="font-size:10.5px;color:'+moodMeta.col+';font-weight:600">'+moodMeta.ic+' '+moodMeta.txt+'</div>'
+      +(next?'<div style="font-size:9.5px;color:var(--muted2);margin-top:5px;font-family:\'Space Mono\',monospace">Prochaine évolution : niveau '+next+' <span style="color:var(--gold2)">(+'+(next-gl)+')</span></div>'
+        :'<div style="font-size:9.5px;color:var(--gold2);margin-top:5px">\u2728 Forme ultime atteinte</div>')
+    +'</div></div>';
+}
+// Repli si la variante d'humeur ou le palier n'existe pas encore
+function avatarFallback(img,fb1,fb2){
+  if(img.dataset.step==='1'){ img.dataset.step='2'; img.src=fb2; return; }
+  if(img.dataset.step==='2'){ img.onerror=null; img.style.display='none'; return; }
+  img.dataset.step='1'; img.src=fb1;
+}
 function renderDash(){
   // Hero séance du jour
   var dates = getDates(0);
   var todayStr = new Date().toDateString();
   var idx=-1; dates.forEach(function(d,i){ if(d.toDateString()===todayStr) idx=i; });
+  renderAvatar();
   var hb = document.getElementById('heroBox');
   if(idx>=0){
     var wOffSave=weekOff; weekOff=0;
