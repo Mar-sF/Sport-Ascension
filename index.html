@@ -971,9 +971,10 @@ function renderAvatar(){
   }[mood];
   // Stats de la semaine (ex-encart "Cette semaine")
   var s=getStore();
-  var done=s.days.filter(function(d){return d.done==='yes';}).length;
-  var mvw=s.days.filter(function(d){return d.done==='mvw';}).length;
-  var total=s.days.filter(function(d){var w=WORKOUTS[d.type];return w&&!w.isRest;}).length;
+  var isActive=function(d){var w=WORKOUTS[d.type];return w&&!w.isRest;};
+  var done=s.days.filter(function(d){return isActive(d)&&d.done==='yes';}).length;
+  var mvw=s.days.filter(function(d){return isActive(d)&&d.done==='mvw';}).length;
+  var total=s.days.filter(isActive).length;
   var streak=calcStreak();
   var xpPct=globalXpPct();
   var src='./avatars/lvl'+tier+'_'+mood+'.png';
@@ -1065,7 +1066,9 @@ function calcStreak(){
       var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
       s.days.forEach(function(d,di){
         var dt=new Date(mon);dt.setDate(mon.getDate()+di);dt.setHours(0,0,0,0);
-        all.push({t:dt.getTime(),ok:['yes','mvw','rest'].includes(d.done)||((WORKOUTS[d.type]||{}).isRest&&d.done!=='no')});
+        var isRestDay=(WORKOUTS[d.type]||{}).isRest;
+        // Un jour de repos programmé ne casse jamais la série, quel que soit son statut
+        all.push({t:dt.getTime(),ok: isRestDay ? true : ['yes','mvw','rest'].includes(d.done)});
       });
     }catch(e){}
   }
@@ -1337,12 +1340,19 @@ function dayBody(day,i,wo){
 
   // ── VUE SAISIE ──
   h+='<div id="sub-form-'+i+'" style="display:'+(sub==='form'?'block':'none')+'">';
-  h+='<div class="circuit-title">Statut s\u00e9ance</div><div class="status-row" style="margin-top:6px">'
-    +'<button class="stbtn'+(day.done==='yes'?' on-yes':'')+'" onclick="setDone('+i+',\'yes\')">\u2713 R\u00e9alis\u00e9e</button>'
-    +'<button class="stbtn'+(day.done==='mvw'?' on-mvw':'')+'" onclick="setDone('+i+',\'mvw\')">\u26a1 MVW 15 min</button>'
-    +'<button class="stbtn'+(day.done==='no'?' on-no':'')+'" onclick="setDone('+i+',\'no\')">\u2717 Skipp\u00e9e</button>'
-    +(wo.isRest?'<button class="stbtn'+(day.done==='rest'?' on-rest':'')+'" onclick="setDone('+i+',\'rest\')">\ud83d\ude34 Repos</button>':'')
-    +'</div>';
+  if(wo.isRest){
+    // Jour de repos : pas de "r\u00e9alis\u00e9e/skipp\u00e9e", juste une validation optionnelle
+    h+='<div class="circuit-title">Journ\u00e9e de repos</div><div class="status-row" style="margin-top:6px">'
+      +'<button class="stbtn'+(day.done==='rest'?' on-rest':'')+'" onclick="setDone('+i+',\'rest\')">\ud83d\ude34 Repos pris</button>'
+      +'</div>'
+      +'<div style="font-size:10px;color:var(--muted2);margin-top:6px;line-height:1.5">Le repos fait partie du programme \u2014 il ne casse jamais ta s\u00e9rie.</div>';
+  } else {
+    h+='<div class="circuit-title">Statut s\u00e9ance</div><div class="status-row" style="margin-top:6px">'
+      +'<button class="stbtn'+(day.done==='yes'?' on-yes':'')+'" onclick="setDone('+i+',\'yes\')">\u2713 R\u00e9alis\u00e9e</button>'
+      +'<button class="stbtn'+(day.done==='mvw'?' on-mvw':'')+'" onclick="setDone('+i+',\'mvw\')">\u26a1 MVW 15 min</button>'
+      +'<button class="stbtn'+(day.done==='no'?' on-no':'')+'" onclick="setDone('+i+',\'no\')">\u2717 Skipp\u00e9e</button>'
+      +'</div>';
+  }
   // Daily Readiness
   var dr=day.dr||{};
   function drRow(lbl,ico,key){
@@ -4810,6 +4820,25 @@ function selfCheck(){
 }
 document.addEventListener('DOMContentLoaded',function(){
   selfCheck();
+  // Migration : les jours de repos ne doivent pas être marqués réalisée/MVW/skippée
+  try{
+    if(localStorage.getItem('sa_rest_fix')!=='1'){
+      for(var mi=0;mi<localStorage.length;mi++){
+        var mk=localStorage.key(mi);
+        if(!mk||mk.indexOf(KEY_PREFIX)!==0)continue;
+        if(isNaN(parseInt(mk.slice(KEY_PREFIX.length),10)))continue;
+        var ms=JSON.parse(localStorage.getItem(mk)||'null');
+        if(!ms||!ms.days)continue;
+        var ch=false;
+        ms.days.forEach(function(d){
+          var w=WORKOUTS[d.type];
+          if(w&&w.isRest&&['yes','mvw','no'].indexOf(d.done)>=0){d.done='rest';ch=true;}
+        });
+        if(ch)localStorage.setItem(mk,JSON.stringify(ms));
+      }
+      localStorage.setItem('sa_rest_fix','1');
+    }
+  }catch(e){}
   // Rappel export si >7j sans sauvegarde et données présentes
   try{
     var lastExp=+localStorage.getItem('sa_last_export')||0;
