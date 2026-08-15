@@ -659,7 +659,7 @@ try{ localStorage.getItem('t'); }catch(e){
 </script>
 <script>
 // ══════════ CONFIG ══════════
-var APP_VERSION = 'v3.8';
+var APP_VERSION = 'v3.9';
 // Purge unique du cache de modèle Gemini (bascule vers Flash-Lite, quota plus large)
 if(localStorage.getItem('sa_model_reset')!=='v37'){
   localStorage.removeItem('sa_gemini_model');
@@ -890,7 +890,8 @@ function globalXpPct(){
 }
 function renderHeader(){
   var gl = globalLevel();
-  document.getElementById('hdSub').textContent = 'Sport Ascension \u00b7 '+APP_VERSION;
+  var cw=getCycleWeek(0), ph=CYCLE_LABELS[cw];
+  document.getElementById('hdSub').textContent = (ph? 'Cycle \u00b7 Semaine '+cw+'/4 \u2014 '+ph.n : 'Reprise') + ' \u00b7 '+APP_VERSION;
   document.getElementById('hdXp').style.width = globalXpPct()+'%';
 }
 
@@ -986,16 +987,16 @@ function renderAvatar(){
         +'style="width:104px;height:140px;object-fit:cover;object-position:top center;border-radius:12px;border:1.5px solid '+moodMeta.col+';background:var(--bg3);'
         +(mood==='sad'?'filter:saturate(.45) brightness(.7);':(mood==='happy'?'filter:saturate(1.12) brightness(1.06);':''))+'" '
         +'onerror="avatarFallback(this,\''+fb1+'\',\''+fb2+'\')">'
-        +'<div style="position:absolute;bottom:-6px;right:-6px;background:var(--bg2);border:1.5px solid '+moodMeta.col+';border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:15px">'+moodMeta.ic+'</div>'
+        +'<div style="position:absolute;bottom:6px;right:6px;background:rgba(10,8,18,.92);border:1.5px solid '+moodMeta.col+';border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:15px;backdrop-filter:blur(4px)">'+moodMeta.ic+'</div>'
       +'</div>'
       // ── Niveau + XP + stats ──
       +'<div style="flex:1;min-width:0">'
-        +'<div style="display:flex;align-items:baseline;gap:8px">'
-          +'<div style="font-family:\'Cinzel\',serif;font-size:30px;font-weight:700;color:var(--gold);line-height:1">'+gl+'</div>'
-          +'<div style="font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;font-weight:800">Level<br>global</div>'
+        +'<div style="display:flex;align-items:center;gap:9px">'
+          +'<div style="font-family:\'Cinzel\',serif;font-size:34px;font-weight:700;color:var(--gold);line-height:.95">'+gl+'</div>'
+          +'<div style="font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;font-weight:800;line-height:1.25">Level<br>global</div>'
         +'</div>'
         +'<div class="skill-bar" style="margin-top:8px;color:var(--xp)"><div class="skill-fill" style="width:'+xpPct+'%"></div></div>'
-        +'<div style="font-size:9px;color:var(--muted2);font-family:\'Space Mono\',monospace;margin-top:3px">'+xpPct+'% vers le niveau '+(gl+1)+'</div>'
+        +'<div style="font-size:9px;color:var(--muted2);font-family:\'Space Mono\',monospace;margin-top:3px">'+xpPct+'% \u2014 progression moyenne des 5 compétences</div>'
         +'<div style="font-size:10px;color:'+moodMeta.col+';font-weight:600;margin-top:7px">'+moodMeta.ic+' '+moodMeta.txt+'</div>'
         +(next?'<div style="font-size:9px;color:var(--muted2);margin-top:3px;font-family:\'Space Mono\',monospace">Évolution avatar : niveau '+next+' <span style="color:var(--gold2)">(+'+(next-gl)+')</span></div>'
           :'<div style="font-size:9px;color:var(--gold2);margin-top:3px">\u2728 Forme ultime atteinte</div>')
@@ -1070,12 +1071,15 @@ function calcStreak(){
   }
   all.sort(function(a,b){return b.t-a.t;});
   var today=new Date();today.setHours(0,0,0,0);
-  var cursor=today.getTime(), st=0;
-  for(var j=0;j<all.length;j++){
-    if(all[j].t>cursor)continue;
-    if(all[j].t<cursor)break;
-    if(all[j].ok){st++;cursor-=86400000;}else break;
-  }
+  var todayT=today.getTime();
+  // Index du jour de départ : aujourd'hui s'il est déjà validé, sinon hier
+  // (une journée en cours ne doit pas casser une série déjà acquise)
+  var map={};
+  all.forEach(function(x){ if(map[x.t]===undefined||x.ok)map[x.t]=x.ok; });
+  var cursor=todayT;
+  if(map[todayT]!==true)cursor=todayT-86400000;
+  var st=0;
+  while(map[cursor]===true){ st++; cursor-=86400000; }
   return st;
 }
 

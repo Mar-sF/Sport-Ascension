@@ -1,5 +1,5 @@
 // Sport Ascension — Service Worker v25 (network-first pour l'app)
-var CACHE = 'ascension-v27';
+var CACHE = 'ascension-v28';
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();
