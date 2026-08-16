@@ -353,19 +353,6 @@ header::after{content:'';position:absolute;bottom:-1px;left:10%;right:10%;height
   <div id="avatarBox"></div>
   <div class="sec">Compétences</div>
   <div class="skill-grid" id="skillGrid"></div>
-  <div class="sec">Poids — Quête Shape</div>
-  <div class="card">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <div style="flex:1;min-width:140px">
-        <div style="font-family:'Space Mono',monospace;font-size:1.7rem;font-weight:700;color:var(--cyan)" id="poidsVal">— kg</div>
-        <div style="font-size:10px;color:var(--muted2)" id="poidsSub">Objectif : 82-83 kg</div>
-      </div>
-      <input type="number" inputmode="decimal" step="0.1" id="poidsInput" placeholder="91.0" style="width:90px;min-height:44px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Space Mono',monospace;font-size:16px;text-align:center">
-      <button class="btn btn-gold" onclick="savePoids()">Peser</button>
-    </div>
-    <div class="skill-bar" style="margin-top:12px;height:12px"><div class="skill-fill" id="poidsBar" style="background:var(--cyan);color:var(--cyan);width:0%"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;font-family:'Space Mono',monospace"><span>91 kg — départ</span><span>82.5 kg — lvl 99</span></div>
-  </div>
 </div>
 
 <!-- ═══ QUÊTES / SEMAINE ═══ -->
@@ -844,7 +831,12 @@ function allLevels(){
 }
 function globalLevel(){
   var l = allLevels();
-  return Math.max(1, Math.round((l.force+l.endur+l.core+l.disc+l.shape)/5));
+  // Shape monte beaucoup plus vite que les autres (il suit le poids, pas l'entraînement).
+  // On le plafonne à 1,5× la moyenne des 4 compétences d'entraînement pour qu'il
+  // valorise la perte de poids sans écraser le niveau global.
+  var m4 = (l.force+l.endur+l.core+l.disc)/4;
+  var shapeEff = Math.min(l.shape, m4*1.5);
+  return Math.max(1, Math.round((l.force+l.endur+l.core+l.disc+shapeEff)/5));
 }
 function grantXp(skill, amount, silent){
   if(!skill || !amount) return;
@@ -915,15 +907,63 @@ function avatarMood(){
   var idx=todayIdx();
   if(idx<0)return 'neutral';
   var day=s.days[idx], wo=WORKOUTS[day.type]||{isRest:true};
+  // Jour de repos programmé : humeur dédiée, prioritaire (le repos fait partie du plan)
+  if(wo.isRest)return 'rest';
   if(day.done==='no')return 'sad';
   if(day.done==='yes'||day.done==='mvw')return 'happy';
-  if(wo.isRest)return 'neutral';
   // séance du jour pas encore faite : triste seulement si la veille a été skippée
   var prev=idx>0?s.days[idx-1]:null;
   if(prev&&prev.done==='no')return 'sad';
   return 'neutral';
 }
 // Bloc "quête du jour" intégré à la carte personnage
+// Bloc poids compact + rappel de pesée (dimanche = jour de pesée officiel)
+function weightBlock(){
+  var p=getPoids();
+  var last=localStorage.getItem('sa_poids_date')||'';
+  var now=new Date();
+  var isSunday=now.getDay()===0;
+  // Pesée déjà faite cette semaine ?
+  var mon=getMon(0); mon.setHours(0,0,0,0);
+  var lastD=last?new Date(last+'T12:00:00'):null;
+  var weighedThisWeek=lastD && lastD>=mon;
+  var pct=p!=null?Math.max(0,Math.min(100,(POIDS_START-p)/(POIDS_START-POIDS_GOAL)*100)):0;
+  var lost=p!=null?Math.round((POIDS_START-p)*10)/10:null;
+  var togo=p!=null?Math.round((p-POIDS_GOAL)*10)/10:null;
+  // Alerte : dimanche sans pesée, ou plus de 7 jours sans pesée
+  var stale = lastD ? (now-lastD)/86400000 > 8 : true;
+  var alert='';
+  if((isSunday&&!weighedThisWeek)||stale){
+    alert='<div style="display:flex;align-items:center;gap:8px;background:rgba(34,211,238,.10);border:1px solid var(--cyan);border-radius:9px;padding:8px 10px;margin-top:8px">'
+      +'<span style="font-size:16px">\u2696\ufe0f</span>'
+      +'<div style="flex:1;font-size:10.5px;color:var(--cyan);line-height:1.4">'
+        +(isSunday&&!weighedThisWeek?'<b>Dimanche \u2014 jour de pesée !</b> Pèse-toi à jeun pour suivre ta quête Shape.'
+          :'<b>Pas de pesée depuis '+(lastD?Math.round((now-lastD)/86400000)+' jours':'le début')+'.</b> Une pesée hebdo suffit à voir la tendance.')
+      +'</div>'
+      +'<button class="btn btn-gold" style="padding:7px 13px;font-size:11px;flex-shrink:0" onclick="var e=document.getElementById(\'poidsInput\');if(e)e.focus()">Peser</button>'
+    +'</div>';
+  }
+  return '<div style="margin-top:12px;padding-top:11px;border-top:1px solid var(--border)">'
+    +'<div style="display:flex;align-items:baseline;gap:8px">'
+      +'<div style="font-size:8.5px;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;font-weight:800">Quête Shape</div>'
+      +'<div style="flex:1"></div>'
+      +'<div style="font-family:\'Space Mono\',monospace;font-size:15px;font-weight:700;color:var(--cyan)">'+(p!=null?p+' kg':'\u2014')+'</div>'
+    +'</div>'
+    +'<div class="skill-bar" style="margin-top:6px;height:9px;color:var(--cyan)"><div class="skill-fill" style="width:'+pct+'%"></div></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted2);margin-top:3px;font-family:\'Space Mono\',monospace">'
+      +'<span>'+(lost!=null?(lost>0?'\u2212'+lost+' kg parcourus':(lost<0?'+'+Math.abs(lost)+' kg':'départ')):'Aucune pesée')+'</span>'
+      +'<span>'+(togo!=null&&togo>0?'encore '+togo+' kg':(togo!=null?'\ud83c\udfaf objectif atteint':''))+'</span>'
+    +'</div>'
+    // Saisie directe
+    +'<div style="display:flex;gap:7px;margin-top:9px;align-items:center">'
+      +'<input type="number" inputmode="decimal" step="0.1" id="poidsInput" placeholder="'+(p!=null?p:'91.0')+'" '
+        +'style="flex:1;min-width:0;min-height:40px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:\'Space Mono\',monospace;font-size:16px;text-align:center">'
+      +'<button class="btn btn-gold" style="padding:10px 16px;font-size:12px;flex-shrink:0" onclick="savePoids()">\u2696\ufe0f Peser</button>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted);margin-top:4px;font-family:\'Space Mono\',monospace"><span>'+POIDS_START+' kg — départ</span><span>'+POIDS_GOAL+' kg — lvl 99</span></div>'
+    +alert
+  +'</div>';
+}
 function questBlock(){
   var idx=todayIdx();
   if(idx<0)return '';
@@ -962,11 +1002,20 @@ function questBlock(){
 function renderAvatar(){
   var el=document.getElementById('avatarBox'); if(!el)return;
   var gl=globalLevel(), tier=avatarTier(gl), mood=avatarMood();
+  // Célébration si l'avatar vient d'évoluer de palier
+  try{
+    var seen=parseInt(localStorage.getItem('sa_avatar_tier')||'0',10);
+    if(tier>seen){
+      localStorage.setItem('sa_avatar_tier',tier);
+      if(seen>0){ setTimeout(function(){ confetti(); toast('\u2728 Ton avatar a évolué \u2014 palier '+tier+' !'); },400); }
+    }
+  }catch(e){}
   var next=null;
   for(var i=0;i<AVATAR_TIERS.length;i++){ if(AVATAR_TIERS[i]>gl){next=AVATAR_TIERS[i];break;} }
   var moodMeta={
     happy:{ic:'\ud83d\udd25',txt:'Quête accomplie',col:'var(--green)',glow:'rgba(74,222,128,.30)'},
     neutral:{ic:'\u2694\ufe0f',txt:'En attente de la quête',col:'var(--gold)',glow:'rgba(227,194,107,.24)'},
+    rest:{ic:'\ud83d\ude34',txt:'Repos \u2014 la Force se reconstruit',col:'var(--cyan)',glow:'rgba(34,211,238,.22)'},
     sad:{ic:'\ud83d\udca4',txt:'Séance manquée',col:'var(--muted2)',glow:'rgba(150,145,168,.18)'}
   }[mood];
   // Stats de la semaine (ex-encart "Cette semaine")
@@ -986,7 +1035,7 @@ function renderAvatar(){
       +'<div style="position:relative;flex-shrink:0">'
         +'<img id="avatarImg" src="'+src+'" alt="Avatar niveau '+gl+'" '
         +'style="width:104px;height:140px;object-fit:cover;object-position:top center;border-radius:12px;border:1.5px solid '+moodMeta.col+';background:var(--bg3);'
-        +(mood==='sad'?'filter:saturate(.45) brightness(.7);':(mood==='happy'?'filter:saturate(1.12) brightness(1.06);':''))+'" '
+        +(mood==='sad'?'filter:saturate(.45) brightness(.7);':(mood==='happy'?'filter:saturate(1.12) brightness(1.06);':(mood==='rest'?'filter:saturate(.85) brightness(.92);':'')))+'" '
         +'onerror="avatarFallback(this,\''+fb1+'\',\''+fb2+'\')">'
         +'<div style="position:absolute;bottom:6px;right:6px;background:rgba(10,8,18,.92);border:1.5px solid '+moodMeta.col+';border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:15px;backdrop-filter:blur(4px)">'+moodMeta.ic+'</div>'
       +'</div>'
@@ -1003,6 +1052,8 @@ function renderAvatar(){
           :'<div style="font-size:9px;color:var(--gold2);margin-top:3px">\u2728 Forme ultime atteinte</div>')
       +'</div>'
     +'</div>'
+    // ── Poids / Quête Shape ──
+    +weightBlock()
     // ── Quête du jour intégrée ──
     +questBlock()
     // ── Stats semaine intégrées ──
@@ -1047,12 +1098,6 @@ function renderDash(){
   }).join('');
 
 
-  // Poids
-  var p=getPoids();
-  document.getElementById('poidsVal').textContent = p!=null? p+' kg':'\u2014 kg';
-  document.getElementById('poidsSub').textContent = p!=null? (p-POIDS_GOAL>0?'Encore '+Math.round((p-82.5)*10)/10+' kg \u2192 lvl 99':'Objectif atteint !') : 'Objectif : 82-83 kg \u2014 saisis ta premi\u00e8re pes\u00e9e';
-  var pctP = p!=null?Math.max(0,Math.min(100,(POIDS_START-p)/(POIDS_START-POIDS_GOAL)*100)):0;
-  document.getElementById('poidsBar').style.width=pctP+'%';
 }
 
 function calcStreak(){
@@ -1092,6 +1137,7 @@ function savePoids(){
   var prev=getPoids();
   var prevLvl=shapeLevel();
   localStorage.setItem('sa_poids', v);
+  localStorage.setItem('sa_poids_date', new Date().toISOString().slice(0,10));
   var s=getStore(); s.poids=v; saveStore(s);
   var newLvl=shapeLevel();
   document.getElementById('poidsInput').value='';
@@ -1647,7 +1693,8 @@ function sessionXp(day,wo){
       if(e.type==='core')coreSeries+=v; else series+=v;
     });
     out.force=Math.round((15+series)*mult);
-    out.core=Math.round(coreSeries*2*mult);
+    // Core rééquilibré : forfait 12 XP par séance contenant du core + 5 XP/série
+    out.core=coreSeries>0 ? Math.round((12+coreSeries*5)*mult) : 0;
   }
   out.disc=day.done==='mvw'?4:8;
   return out;
