@@ -940,7 +940,6 @@ function weightBlock(){
         +(isSunday&&!weighedThisWeek?'<b>Dimanche \u2014 jour de pesée !</b> Pèse-toi à jeun pour suivre ta quête Shape.'
           :'<b>Pas de pesée depuis '+(lastD?Math.round((now-lastD)/86400000)+' jours':'le début')+'.</b> Une pesée hebdo suffit à voir la tendance.')
       +'</div>'
-      +'<button class="btn btn-gold" style="padding:7px 13px;font-size:11px;flex-shrink:0" onclick="var e=document.getElementById(\'poidsInput\');if(e)e.focus()">Peser</button>'
     +'</div>';
   }
   return '<div style="margin-top:12px;padding-top:11px;border-top:1px solid var(--border)">'
@@ -1032,12 +1031,12 @@ function renderAvatar(){
   el.innerHTML='<div class="card" style="border-color:'+moodMeta.col+';box-shadow:0 0 18px '+moodMeta.glow+'">'
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
       // ── Avatar ──
-      +'<div style="position:relative;flex-shrink:0">'
+      +'<div style="position:relative;flex-shrink:0;line-height:0">'
         +'<img id="avatarImg" src="'+src+'" alt="Avatar niveau '+gl+'" '
-        +'style="width:104px;height:140px;object-fit:cover;object-position:top center;border-radius:12px;border:1.5px solid '+moodMeta.col+';background:var(--bg3);'
+        +'style="display:block;width:104px;height:140px;object-fit:cover;object-position:top center;border-radius:12px;border:1.5px solid '+moodMeta.col+';background:var(--bg3);'
         +(mood==='sad'?'filter:saturate(.45) brightness(.7);':(mood==='happy'?'filter:saturate(1.12) brightness(1.06);':(mood==='rest'?'filter:saturate(.85) brightness(.92);':'')))+'" '
         +'onerror="avatarFallback(this,\''+fb1+'\',\''+fb2+'\')">'
-        +'<div style="position:absolute;bottom:6px;right:6px;background:rgba(10,8,18,.92);border:1.5px solid '+moodMeta.col+';border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:15px;backdrop-filter:blur(4px)">'+moodMeta.ic+'</div>'
+        +'<div style="position:absolute;bottom:-2px;right:-2px;background:var(--bg2);border:2px solid '+moodMeta.col+';border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 10px '+moodMeta.glow+'">'+moodMeta.ic+'</div>'
       +'</div>'
       // ── Niveau + XP + stats ──
       +'<div style="flex:1;min-width:0">'
