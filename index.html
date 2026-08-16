@@ -2130,7 +2130,13 @@ function applyProgOverride(){
   try{
     var raw=localStorage.getItem('sa_prog_override'); if(!raw)return;
     var prog=JSON.parse(raw); if(!prog.workouts)return;
-    Object.keys(prog.workouts).forEach(function(k){if(WORKOUTS[k])WORKOUTS[k]=prog.workouts[k];});
+    Object.keys(prog.workouts).forEach(function(k){
+      if(!WORKOUTS[k])return;
+      var wasRest=WORKOUTS[k].isRest||k==='rest'||k==='rest_batch';
+      WORKOUTS[k]=prog.workouts[k];
+      // Les jours de repos le restent, même si le programme JSON omet le champ
+      if(wasRest&&WORKOUTS[k].isRest!==false)WORKOUTS[k].isRest=true;
+    });
     var el=document.getElementById('progStatus');
     if(el)el.textContent='\u2713 Actif : '+(prog.label||'personnalis\u00e9');
   }catch(e){}
@@ -2146,7 +2152,12 @@ function autoFetchProg(){
       if(inc===cur)return;
       localStorage.setItem('sa_prog_override',inc);
       if(prog.cycleStart)localStorage.setItem('sa_cycle_start',prog.cycleStart);
-      Object.keys(prog.workouts).forEach(function(k){if(WORKOUTS[k])WORKOUTS[k]=prog.workouts[k];});
+      Object.keys(prog.workouts).forEach(function(k){
+        if(!WORKOUTS[k])return;
+        var wasRest=WORKOUTS[k].isRest||k==='rest'||k==='rest_batch';
+        WORKOUTS[k]=prog.workouts[k];
+        if(wasRest&&WORKOUTS[k].isRest!==false)WORKOUTS[k].isRest=true;
+      });
       var el=document.getElementById('progStatus');
       if(el)el.textContent='\u2713 Actif : '+(prog.label||'distant');
       renderWeek();renderDash();
