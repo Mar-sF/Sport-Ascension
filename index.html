@@ -2219,7 +2219,7 @@ function getWeekStats(){
           (d.sets[exo]||[]).forEach(function(v){
             v=+v; if(!v)return;
             var lo=exo.toLowerCase();
-            if(lo.indexOf('pompes au sol')>=0&&v>pompes)pompes=v;
+            if(/pompe/i.test(lo)&&!/pull|tirage/i.test(lo)&&v>pompes)pompes=v;
             if(lo.indexOf('planche')>=0&&lo.indexOf('lat')<0&&v>planche)planche=v;
           });
         });
@@ -2580,6 +2580,13 @@ function exportCycleDoc(){
     try{var s=JSON.parse(localStorage.getItem(k)); if(s&&s.days)allWeeks.push({key:dn,mon:mon,cyc:cyc,cw:diff>=0?(diff%4)+1:0,s:s});}catch(e){}
   }
   allWeeks.sort(function(a,b){return a.key-b.key;});
+  // Écarte les semaines antérieures au cycle 1 sans aucune activité enregistrée
+  allWeeks=allWeeks.filter(function(w){
+    if(w.cyc>0)return true;
+    return (w.s.days||[]).some(function(d){
+      return d.done||Object.keys(d.sets||{}).length||(d.run&&(d.run.dur||d.run.km));
+    });
+  });
   var cycWeeks=allWeeks.filter(function(w){return w.cyc===cn;});
   var vol=getWeeklyVolume(), ton=getWeeklyTonnage();
   var vMap={},tMap={};
@@ -2700,7 +2707,9 @@ function exportCycleDoc(){
     days.forEach(function(d){var sc=drScore(d);if(sc!=null)drs.push(sc);if(+d.fc)fcs.push(+d.fc);});
     var v=vMap[w.key]||{}, t=tMap[w.key]||{};
     var phase=w.cw&&CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'—';
-    html+='<tr'+(w.cyc===cn?' class="tot"':'')+'><td>'+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+'</td><td>C'+(w.cyc||'—')+'</td><td>'+esc(phase)+'</td><td>'+q+'/'+tt+'</td><td>'+(v.series||0)+'</td><td>'+(t.kg||0)+' kg</td><td>'+(v.runMin||0)+' min</td><td>'+fx(v.runKm||0)+' km</td><td>'+(w.s.poids?w.s.poids+' kg':'—')+'</td><td>'+(w.s.xpWeek||0)+'</td>'
+    // séances validées mais aucune série saisie → données incomplètes
+    var incomplete = q>0 && !(v.series>0) && !(v.runMin>0);
+    html+='<tr'+(w.cyc===cn?' class="tot"':'')+'><td>'+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+(incomplete?' <span title="séances validées sans résultats saisis">⚠️</span>':'')+'</td><td>C'+(w.cyc||'—')+'</td><td>'+esc(phase)+'</td><td>'+q+'/'+tt+'</td><td>'+(v.series||0)+'</td><td>'+(t.kg||0)+' kg</td><td>'+(v.runMin||0)+' min</td><td>'+fx(v.runKm||0)+' km</td><td>'+(w.s.poids?w.s.poids+' kg':'—')+'</td><td>'+(w.s.xpWeek||0)+'</td>'
       +'<td>'+(drs.length?Math.round(drs.reduce(function(a,b){return a+b;},0)/drs.length)+'/40':'—')+'</td>'
       +'<td>'+(fcs.length?Math.round(fcs.reduce(function(a,b){return a+b;},0)/fcs.length):'—')+'</td></tr>';
   });
@@ -2775,7 +2784,7 @@ function exportCycleDoc(){
 
   // ════ 9. NUTRITION DU CYCLE ════
   html+='<h2>🍎 Nutrition du cycle '+cn+'</h2>';
-  var nRows='',nk=0,np=0,ncb=0,nl=0,nw=0,nn=0,nDates=[],nKcal=[],nProt=[];
+  var nRows='',nk=0,np=0,ncb=0,nl=0,nw=0,nn=0,nPartial=0,nDates=[],nKcal=[],nProt=[];
   cycWeeks.forEach(function(w){
     for(var dd=0;dd<7;dd++){
       var dt=new Date(w.mon); dt.setDate(w.mon.getDate()+dd);
@@ -2783,10 +2792,13 @@ function exportCycleDoc(){
       var log=nutLog[kk]; if(!log||!log.meals)continue;
       var t=nutTotals(kk).t; if(!(t.k>0))continue;
       var wat=(log.water||0);
-      nk+=t.k;np+=t.p;ncb+=t.c;nl+=t.l;nw+=wat;nn++;
+      // Journée manifestement incomplète (< 60% de la cible) : exclue des moyennes
+      var partial = t.k < nutGoals.kcal*0.6;
+      if(partial)nPartial++;
+      else{ nk+=t.k;np+=t.p;ncb+=t.c;nl+=t.l;nw+=wat;nn++; }
       nDates.push(pd(dt.getDate())+'/'+pd(dt.getMonth()+1)); nKcal.push(Math.round(t.k)); nProt.push(Math.round(t.p));
       function d2(v,g){var x=Math.round(v-g);return (x>0?'<span class="bad">+'+x+'</span>':'<span class="ok">'+x+'</span>');}
-      nRows+='<tr><td>'+DN[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+'</td>'
+      nRows+='<tr'+(partial?' style="opacity:.55"':'')+'><td>'+DN[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+(partial?' ⚠️':'')+'</td>'
         +'<td>'+Math.round(t.k)+'</td><td>'+d2(t.k,nutGoals.kcal)+'</td>'
         +'<td>'+Math.round(t.p)+'</td><td>'+Math.round(t.c)+'</td><td>'+Math.round(t.l)+'</td><td>'+fx(wat/1000)+' L</td></tr>';
     }
@@ -2800,7 +2812,9 @@ function exportCycleDoc(){
       +'<tr><td>CIBLE</td><td>'+nutGoals.kcal+'</td><td>—</td><td>'+nutGoals.prot+'</td><td>'+nutGoals.carb+'</td><td>'+nutGoals.fat+'</td><td>'+fx(nutGoals.water/1000)+' L</td></tr></table>';
     var bilanKcal=Math.round((nk/nn-nutGoals.kcal)*nn);
     html+='<p>Bilan calorique du cycle : <b>'+(bilanKcal>0?'+':'')+bilanKcal+' kcal</b> vs cible ('+(bilanKcal<0?'déficit':'excédent')+' théorique ≈ '+fx(Math.abs(bilanKcal)/7700)+' kg)</p>';
-    if(nn<cycWeeks.length*7)html+='<div class="warn">⚠️ '+(cycWeeks.length*7-nn)+' jour(s) non saisi(s) — moyennes à interpréter avec prudence.</div>';
+    if(nPartial)html+='<div class="warn">⚠️ '+nPartial+' journée(s) marquée(s) ⚠️ sont manifestement incomplètes (&lt; 60% de la cible) et <b>exclues des moyennes</b> — probablement des saisies oubliées, pas de vraies journées.</div>';
+    var nonSaisis=cycWeeks.length*7-nn-nPartial;
+    if(nonSaisis>0)html+='<div class="warn">⚠️ '+nonSaisis+' jour(s) sans aucune saisie — les moyennes portent sur '+nn+' journée(s) complète(s).</div>';
   } else html+='<p class="muted">Aucune journée nutrition saisie sur ce cycle.</p>';
 
   // ════ 10. JOURNAL D'AVENTURE ════
@@ -2874,6 +2888,13 @@ function exportCycleMd(){
     try{var s=JSON.parse(localStorage.getItem(k)); if(s&&s.days)allWeeks.push({key:dn,mon:mon,cyc:cyc,cw:diff>=0?(diff%4)+1:0,s:s});}catch(e){}
   }
   allWeeks.sort(function(a,b){return a.key-b.key;});
+  // Écarte les semaines antérieures au cycle 1 sans aucune activité enregistrée
+  allWeeks=allWeeks.filter(function(w){
+    if(w.cyc>0)return true;
+    return (w.s.days||[]).some(function(d){
+      return d.done||Object.keys(d.sets||{}).length||(d.run&&(d.run.dur||d.run.km));
+    });
+  });
   var cycWeeks=allWeeks.filter(function(w){return w.cyc===cn;});
   var vol=getWeeklyVolume(), ton=getWeeklyTonnage();
   var vMap={},tMap={};
@@ -2986,7 +3007,8 @@ function exportCycleMd(){
     var v=vMap[w.key]||{}, t=tMap[w.key]||{};
     var phase=w.cw&&CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'—';
     var hl=w.cyc===cn?'**':'';
-    m+='| '+hl+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+hl+' | C'+(w.cyc||'—')+' | '+esc(phase)+' | '+q+'/'+tt+' | '+(v.series||0)+' | '+(t.kg||0)+' | '+(v.runMin||0)+' min | '+fx(v.runKm||0)+' km | '+(w.s.poids?w.s.poids+' kg':'—')+' | '+(w.s.xpWeek||0)+' | '
+    var incomplete = q>0 && !(v.series>0) && !(v.runMin>0);
+    m+='| '+hl+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+hl+(incomplete?' ⚠️':'')+' | C'+(w.cyc||'—')+' | '+esc(phase)+' | '+q+'/'+tt+' | '+(v.series||0)+' | '+(t.kg||0)+' | '+(v.runMin||0)+' min | '+fx(v.runKm||0)+' km | '+(w.s.poids?w.s.poids+' kg':'—')+' | '+(w.s.xpWeek||0)+' | '
       +(drs.length?Math.round(drs.reduce(function(a,b){return a+b;},0)/drs.length):'—')+' | '
       +(fcs.length?Math.round(fcs.reduce(function(a,b){return a+b;},0)/fcs.length):'—')+' |\n';
   });
@@ -3056,7 +3078,7 @@ function exportCycleMd(){
 
   // ── Nutrition ──
   m+='---\n\n## 🍎 Nutrition du cycle '+cn+'\n\n';
-  var nRows='',nk=0,np=0,ncb=0,nl=0,nw=0,nn=0,nKcal=[];
+  var nRows='',nk=0,np=0,ncb=0,nl=0,nw=0,nn=0,nPartial=0,nKcal=[];
   cycWeeks.forEach(function(w){
     for(var dd=0;dd<7;dd++){
       var dt=new Date(w.mon); dt.setDate(w.mon.getDate()+dd);
@@ -3064,9 +3086,12 @@ function exportCycleMd(){
       var log=nutLog[kk]; if(!log||!log.meals)continue;
       var t=nutTotals(kk).t; if(!(t.k>0))continue;
       var wat=(log.water||0);
-      nk+=t.k;np+=t.p;ncb+=t.c;nl+=t.l;nw+=wat;nn++;nKcal.push(Math.round(t.k));
+      var partial = t.k < nutGoals.kcal*0.6;
+      if(partial)nPartial++;
+      else{ nk+=t.k;np+=t.p;ncb+=t.c;nl+=t.l;nw+=wat;nn++; }
+      nKcal.push(Math.round(t.k));
       var ec=Math.round(t.k-nutGoals.kcal);
-      nRows+='| '+DN[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+' | '+Math.round(t.k)+' | '+(ec>0?'+'+ec:ec)+' | '+Math.round(t.p)+' | '+Math.round(t.c)+' | '+Math.round(t.l)+' | '+fx(wat/1000)+' L |\n';
+      nRows+='| '+DN[dt.getDay()]+' '+pd(dt.getDate())+'/'+pd(dt.getMonth()+1)+(partial?' ⚠️':'')+' | '+Math.round(t.k)+' | '+(ec>0?'+'+ec:ec)+' | '+Math.round(t.p)+' | '+Math.round(t.c)+' | '+Math.round(t.l)+' | '+fx(wat/1000)+' L |\n';
     }
   });
   if(nn){
@@ -3076,7 +3101,9 @@ function exportCycleMd(){
     m+='| *CIBLE* | *'+nutGoals.kcal+'* | — | *'+nutGoals.prot+'* | *'+nutGoals.carb+'* | *'+nutGoals.fat+'* | *'+fx(nutGoals.water/1000)+' L* |\n\n';
     var bilanKcal=Math.round((nk/nn-nutGoals.kcal)*nn);
     m+='**Bilan calorique du cycle** : '+(bilanKcal>0?'+':'')+bilanKcal+' kcal vs cible ('+(bilanKcal<0?'déficit':'excédent')+' théorique ≈ '+fx(Math.abs(bilanKcal)/7700)+' kg)\n\n';
-    if(nn<cycWeeks.length*7)m+='> ⚠️ '+(cycWeeks.length*7-nn)+' jour(s) non saisi(s) — moyennes à interpréter avec prudence.\n\n';
+    if(nPartial)m+='> ⚠️ '+nPartial+' journée(s) marquée(s) ⚠️ sont incomplètes (< 60% de la cible) et **exclues des moyennes** — probablement des saisies oubliées.\n\n';
+    var nonSaisis2=cycWeeks.length*7-nn-nPartial;
+    if(nonSaisis2>0)m+='> ⚠️ '+nonSaisis2+' jour(s) sans aucune saisie — moyennes calculées sur '+nn+' journée(s) complète(s).\n\n';
   } else m+='*Aucune journée nutrition saisie sur ce cycle.*\n\n';
 
   // ── Journal d'aventure ──
