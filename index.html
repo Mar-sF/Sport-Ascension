@@ -662,7 +662,7 @@ var SKILLS = [
   {id:'disc',  name:'Discipline', icon:'\ud83d\udd25', color:'#fb923c', cls:'sk-disc'},
   {id:'shape', name:'Shape',      icon:'\u2696\ufe0f', color:'#22d3ee', cls:'sk-shape'}
 ];
-var POIDS_START = 91.0, POIDS_GOAL = 82.5;
+var POIDS_START = 93.7, POIDS_GOAL = 82.5;
 var DAY_NAMES = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 var DEFAULT_TYPES = ['run','cali_a','rest','cali_b','run2','cali_c','rest_batch'];
 
@@ -884,7 +884,8 @@ function globalXpPct(){
 function renderHeader(){
   var gl = globalLevel();
   var cw=getCycleWeek(0), ph=CYCLE_LABELS[cw];
-  document.getElementById('hdSub').textContent = (ph? 'Cycle \u00b7 Semaine '+cw+'/4 \u2014 '+ph.n : 'Reprise') + ' \u00b7 '+APP_VERSION;
+  var cnum=getCycleNum(0);
+  document.getElementById('hdSub').textContent = (ph? 'Cycle '+(cnum||1)+' \u00b7 Semaine '+cw+'/4 \u2014 '+ph.n : 'Reprise') + ' \u00b7 '+APP_VERSION;
   document.getElementById('hdXp').style.width = globalXpPct()+'%';
 }
 
@@ -1849,7 +1850,7 @@ function bossProgress(skill,b){
   if(b.poids){
     var p=getPoids();
     if(p==null)return null;
-    // progression du poids de départ (91) vers la cible du boss
+    // progression du poids de départ vers la cible du boss
     var done=Math.max(0,Math.min(100,Math.round((POIDS_START-p)/(POIDS_START-b.poids)*100)));
     return {cur:p,target:b.poids,unit:' kg',pct:done,label:'Poids actuel',invert:true};
   }
@@ -1875,7 +1876,7 @@ function openSkillDetail(id){
     endur:'Course valid\u00e9e : 15 XP + 0.5/min \u00b7 MVW : 40%',
     core:'2 XP par s\u00e9rie de gainage/core dans tes s\u00e9ances',
     disc:'S\u00e9ance faite : 8 XP \u00b7 MVW : 4 \u00b7 Semaine 5/5 : +40',
-    shape:'Le level suit ton poids : 91 kg = lvl 1 \u2192 82.5 kg = lvl 99'
+    shape:'Le level suit ton poids : '+POIDS_START+' kg = lvl 1 \u2192 '+POIDS_GOAL+' kg = lvl 99'
   };
   var h='<div class="nut-modal-title"><span>'+sk.icon+' '+sk.name+'</span><button class="nut-close" onclick="closeSkillDetail()">\u2715</button></div>'
     +'<div style="display:flex;align-items:baseline;gap:9px;margin-bottom:3px"><span class="skill-lvl" style="color:'+sk.color+';font-size:26px">'+lvl+'</span>'
@@ -3194,25 +3195,35 @@ function progPhotoDel(i){
   localStorage.setItem('sa_prog_photos',JSON.stringify(arr));
   renderProgPhotos();
 }
+var progPhotosVisible=false;
+function progPhotosToggle(){ progPhotosVisible=!progPhotosVisible; renderProgPhotos(); }
 function renderProgPhotos(){
   var el=document.getElementById('progPhotos'); if(!el)return;
   var arr=progPhotosGet();
   if(!arr.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:6px">Aucune photo pour l\u2019instant.</div>';return;}
-  // avant/après : première et dernière côte à côte si ≥2
-  var h='';
+  var vis=progPhotosVisible;
+  var blur = vis ? '' : 'filter:blur(14px);';
+  // Bouton de révélation
+  var h='<button class="btn btn-out" style="width:100%;margin-bottom:10px" onclick="progPhotosToggle()">'
+    +(vis?'\ud83d\ude48 Masquer les photos':'\ud83d\udc41\ufe0f Afficher les photos ('+arr.length+')')+'</button>';
+  if(!vis){
+    h+='<div style="font-size:10px;color:var(--muted2);text-align:center;margin-bottom:8px">Photos masqu\u00e9es par d\u00e9faut \u2014 elles restent priv\u00e9es sur cet appareil.</div>';
+  }
+  // avant/après
   if(arr.length>=2){
     var a=arr[0],b=arr[arr.length-1];
     h+='<div style="display:flex;gap:6px;margin-bottom:10px">'
-      +['<div style="flex:1;text-align:center"><img src="'+a.img+'" style="width:100%;border-radius:8px;border:1px solid var(--border2)"><div style="font-size:9px;color:var(--muted2);margin-top:3px">'+a.date+(a.poids?' \u00b7 '+a.poids+'kg':'')+'</div></div>',
-        '<div style="flex:1;text-align:center"><img src="'+b.img+'" style="width:100%;border-radius:8px;border:1px solid var(--gold2)"><div style="font-size:9px;color:var(--gold2);margin-top:3px">'+b.date+(b.poids?' \u00b7 '+b.poids+'kg':'')+'</div></div>'].join('')
+      +['<div style="flex:1;text-align:center"><img src="'+a.img+'" style="width:100%;border-radius:8px;border:1px solid var(--border2);'+blur+'"><div style="font-size:9px;color:var(--muted2);margin-top:3px">'+a.date+(a.poids?' \u00b7 '+a.poids+'kg':'')+'</div></div>',
+        '<div style="flex:1;text-align:center"><img src="'+b.img+'" style="width:100%;border-radius:8px;border:1px solid var(--gold2);'+blur+'"><div style="font-size:9px;color:var(--gold2);margin-top:3px">'+b.date+(b.poids?' \u00b7 '+b.poids+'kg':'')+'</div></div>'].join('')
       +'</div>';
     if(a.poids&&b.poids)h+='<div style="text-align:center;font-size:11px;color:var(--cyan);margin-bottom:10px">\u0394 '+(Math.round((b.poids-a.poids)*10)/10)+' kg entre les deux</div>';
   }
   h+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
   arr.forEach(function(p,i){
-    h+='<div style="position:relative;width:31%"><img src="'+p.img+'" style="width:100%;border-radius:6px;border:1px solid var(--border2)">'
+    h+='<div style="position:relative;width:31%"><img src="'+p.img+'" style="width:100%;border-radius:6px;border:1px solid var(--border2);'+blur+'">'
       +'<div style="font-size:8px;color:var(--muted2);text-align:center">'+p.date+'</div>'
-      +'<button class="mini-btn" style="position:absolute;top:2px;right:2px;padding:2px 5px;min-height:0;border-color:rgba(248,113,113,.5);color:#f87171" onclick="progPhotoDel('+i+')">\u2715</button></div>';
+      +(vis?'<button class="mini-btn" style="position:absolute;top:2px;right:2px;padding:2px 5px;min-height:0;border-color:rgba(248,113,113,.5);color:#f87171" onclick="progPhotoDel('+i+')">\u2715</button>':'')
+      +'</div>';
   });
   h+='</div>';
   el.innerHTML=h;
@@ -3425,6 +3436,15 @@ function getCycleWeek(off){
   var diff=Math.round((cur-sd)/(7*86400000));
   if(diff<0)return null;
   return (diff%4)+1;
+}
+// Numéro du cycle courant (1, 2, 3...)
+function getCycleNum(off){
+  var start=getCycleStart();
+  var sd=new Date(start.slice(0,4),start.slice(4,6)-1,start.slice(6,8));
+  var cur=getMon(off===undefined?weekOff:off);
+  var diff=Math.round((cur-sd)/(7*86400000));
+  if(diff<0)return null;
+  return Math.floor(diff/4)+1;
 }
 function renderCycleBadge(){
   var el=document.getElementById('cycleBadge'); if(!el)return;
