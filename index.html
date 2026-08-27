@@ -1033,7 +1033,7 @@ function renderAvatar(){
   el.innerHTML='<div class="card" style="border-color:'+moodMeta.col+';box-shadow:0 0 18px '+moodMeta.glow+'">'
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
       // ── Avatar ──
-      +'<div style="position:relative;flex-shrink:0;line-height:0">'
+      +'<div style="position:relative;flex-shrink:0;line-height:0;width:104px;height:140px">'
         +'<img id="avatarImg" src="'+src+'" alt="Avatar niveau '+gl+'" '
         +'style="display:block;width:104px;height:140px;object-fit:cover;object-position:top center;border-radius:12px;border:1.5px solid '+moodMeta.col+';background:var(--bg3);'
         +(mood==='sad'?'filter:saturate(.45) brightness(.7);':(mood==='happy'?'filter:saturate(1.12) brightness(1.06);':(mood==='rest'?'filter:saturate(.85) brightness(.92);':'')))+'" '
@@ -1049,7 +1049,8 @@ function renderAvatar(){
         +'<div class="skill-bar" style="margin-top:8px;color:var(--xp)"><div class="skill-fill" style="width:'+xpPct+'%"></div></div>'
         +'<div style="font-size:9px;color:var(--muted2);font-family:\'Space Mono\',monospace;margin-top:3px">'+xpPct+'% \u2014 progression moyenne des 5 compétences</div>'
         +'<div style="font-size:10px;color:'+moodMeta.col+';font-weight:600;margin-top:7px">'+moodMeta.ic+' '+moodMeta.txt+'</div>'
-        +(next?'<div style="font-size:9px;color:var(--muted2);margin-top:3px;font-family:\'Space Mono\',monospace">Évolution avatar : niveau '+next+' <span style="color:var(--gold2)">(+'+(next-gl)+')</span></div>'
+        +(next?'<div style="font-size:9px;margin-top:3px;font-family:\'Space Mono\',monospace;'+((next-gl)<=2?'color:var(--gold);font-weight:700':'color:var(--muted2)')+'">'
+          +((next-gl)<=2?'\u2728 ':'')+'Évolution avatar : niveau '+next+' <span style="color:var(--gold2)">(+'+(next-gl)+' niveau'+((next-gl)>1?'x':'')+')</span></div>'
           :'<div style="font-size:9px;color:var(--gold2);margin-top:3px">\u2728 Forme ultime atteinte</div>')
       +'</div>'
     +'</div>'
@@ -1072,7 +1073,19 @@ function renderAvatar(){
 // Repli si la variante d'humeur ou le palier n'existe pas encore
 function avatarFallback(img,fb1,fb2){
   if(img.dataset.step==='1'){ img.dataset.step='2'; img.src=fb2; return; }
-  if(img.dataset.step==='2'){ img.onerror=null; img.style.display='none'; return; }
+  if(img.dataset.step==='2'){
+    // Aucune image trouvée : on garde la place (sinon le badge d'humeur part hors cadre)
+    img.onerror=null;
+    img.dataset.step='3';
+    img.removeAttribute('src');
+    img.style.objectFit='contain';
+    var ph=document.createElement('div');
+    ph.style.cssText='display:flex;align-items:center;justify-content:center;width:104px;height:140px;border-radius:12px;border:1.5px dashed var(--border2);background:var(--bg3);font-size:34px;color:var(--muted)';
+    ph.textContent='\u2694\ufe0f';
+    ph.title='Image manquante dans /avatars/';
+    if(img.parentNode)img.parentNode.replaceChild(ph,img);
+    return;
+  }
   img.dataset.step='1'; img.src=fb1;
 }
 function renderDash(){

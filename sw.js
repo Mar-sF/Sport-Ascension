@@ -1,5 +1,5 @@
 // Sport Ascension — Service Worker v25 (network-first pour l'app)
-var CACHE = 'ascension-v28';
+var CACHE = 'ascension-v29';
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();
@@ -39,15 +39,23 @@ self.addEventListener('fetch', function(e) {
       })
     );
   } else {
-    // CACHE-FIRST : icônes, CDN
+    // CACHE-FIRST : icônes, avatars, CDN
     e.respondWith(
       caches.match(e.request).then(function(r) {
-        return r || fetch(e.request).then(function(resp) {
-          var clone = resp.clone();
-          caches.open(CACHE).then(function(c){ c.put(e.request, clone); });
+        // Une réponse en cache n'est réutilisée que si elle est valide.
+        // Sinon on la purge et on retente le réseau (cas des 404 mis en cache
+        // avant l'upload d'un fichier, ex. les avatars).
+        if (r && r.ok) return r;
+        if (r) caches.open(CACHE).then(function(c){ c.delete(e.request); });
+        return fetch(e.request).then(function(resp) {
+          // On ne met en cache QUE les réponses valides
+          if (resp && resp.ok) {
+            var clone = resp.clone();
+            caches.open(CACHE).then(function(c){ c.put(e.request, clone); });
+          }
           return resp;
         }).catch(function(){
-          // ne JAMAIS renvoyer index.html pour un asset (JS/CSS/img) : réponse 504 vide
+          // ne JAMAIS renvoyer index.html pour un asset (JS/CSS/img)
           return new Response('', {status: 504, statusText: 'offline'});
         });
       })
