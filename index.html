@@ -74,6 +74,10 @@ body{padding-bottom:calc(78px + var(--safe-b))}
 .bn .bi,.bsheet-item .bi{font-size:21px;line-height:1}
 .bn.active{color:var(--gold);background:rgba(227,194,107,.12);border-color:var(--border)}
 .bn:active{transform:scale(.94)}
+.bnav{transition:transform .2s ease}
+body.kb-open .bnav{transform:translateY(115%);pointer-events:none}
+.bsheet:not(.show){visibility:hidden;transition:transform .25s cubic-bezier(.22,1,.36,1),visibility 0s linear .25s}
+.bsheet.show{visibility:visible}
 .bsheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:380;opacity:0;pointer-events:none;transition:opacity .2s}
 .bsheet-bg.show{opacity:1;pointer-events:auto}
 .bsheet{position:fixed;left:0;right:0;bottom:calc(66px + var(--safe-b));z-index:390;background:var(--bg2);border-top:1px solid var(--border2);border-radius:18px 18px 0 0;padding:16px 14px 14px;transform:translateY(120%);transition:transform .25s cubic-bezier(.22,1,.36,1)}
@@ -1661,6 +1665,24 @@ function smQuit(){
   var card=document.getElementById('day-'+i); if(card)card.classList.add('open');
 }
 
+
+// ══════════ BARRE DU BAS : MASQUÉE QUAND LE CLAVIER EST OUVERT ══════════
+function initKeyboardGuard(){
+  var EDIT=/^(INPUT|TEXTAREA|SELECT)$/;
+  var NOKB=/^(button|checkbox|radio|file|range|color|submit)$/i;
+  function isEditing(){ var a=document.activeElement; return !!(a&&EDIT.test(a.tagName)&&!NOKB.test(a.type||'')); }
+  function set(on){ document.body.classList.toggle('kb-open',on); if(on)closeMore(); }
+  document.addEventListener('focusin',function(){ if(isEditing())set(true); });
+  document.addEventListener('focusout',function(){ setTimeout(function(){ if(!isEditing())set(false); },150); });
+  // Clavier fermé sans quitter le champ (bouton retour Android) : on réaffiche la barre
+  if(window.visualViewport){
+    var maxH=window.visualViewport.height;
+    window.visualViewport.addEventListener('resize',function(){
+      var h=window.visualViewport.height; if(h>maxH)maxH=h;
+      if(h>=maxH*0.85)set(false); else if(isEditing())set(true);
+    });
+  }
+}
 // ══════════ SWIPE ENTRE LES JOURS ══════════
 function initDaySwipe(){
   var dl=document.getElementById('daysList'); if(!dl||dl._swipe)return;
@@ -5677,6 +5699,7 @@ function selfCheck(){
 document.addEventListener('DOMContentLoaded',function(){
   selfCheck();
   try{ initDaySwipe(); }catch(e){}
+  try{ initKeyboardGuard(); }catch(e){}
   // Migration : les jours de repos ne doivent pas être marqués réalisée/MVW/skippée
   try{
     if(localStorage.getItem('sa_rest_fix')!=='1'){
