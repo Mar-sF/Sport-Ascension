@@ -833,7 +833,7 @@ try{ localStorage.getItem('t'); }catch(e){
 </script>
 <script>
 // ══════════ CONFIG ══════════
-var APP_VERSION = 'v4.1';
+var APP_VERSION = 'v4.2';
 // Purge unique du cache de modèle Gemini (bascule vers Flash-Lite, quota plus large)
 if(localStorage.getItem('sa_model_reset')!=='v37'){
   localStorage.removeItem('sa_gemini_model');
@@ -1082,9 +1082,7 @@ function globalXpPct(){
 }
 function renderHeader(){
   var gl = globalLevel();
-  var cw=getCycleWeek(0), ph=CYCLE_LABELS[cw];
-  var cnum=getCycleNum(0);
-  document.getElementById('hdSub').textContent = (ph? 'Cycle '+(cnum||1)+' \u00b7 Semaine '+cw+'/4 \u2014 '+ph.n : 'Reprise') + ' \u00b7 '+APP_VERSION;
+  document.getElementById('hdSub').textContent = cycleLabel(cycleInfo(getMon(0))) + ' \u00b7 '+APP_VERSION;
   document.getElementById('hdXp').style.width = globalXpPct()+'%';
 }
 
@@ -1209,7 +1207,8 @@ function questBlock(){
       +prep
     +'</div>'
     +(!wo.isRest?'<button class="btn btn-gold qd-go" onclick="goToDay('+idx+')">'+(isDone?'Voir':'Go')+'</button>':'')
-  +'</div>';
+  +'</div>'
+  +(day.type.indexOf('run')===0&&!(day.run&&day.run.g)?'<button class="mini-btn" style="width:100%;margin-top:8px" onclick="garminPick('+idx+',true)">\ud83d\udce5 Importer mon run Garmin (CSV)</button>':'');
 }
 // Anneaux d'activité : un anneau par compétence, rempli selon l'XP vers le niveau suivant
 function skillRings(size){
@@ -1455,7 +1454,7 @@ function renderWeek(){
   var todayStr=new Date().toDateString();
   var stL={yes:'\u2713 Fait',mvw:'\u26a1 MVW',no:'\u2717 Skip',rest:'\ud83d\ude34 Repos','':'Planifi\u00e9e'};
   var stC={yes:'st-yes',mvw:'st-mvw',no:'st-no',rest:'st-rest','':'st-planned'};
-  document.getElementById('daysList').innerHTML = (weekOff===0?fcAlert():'') + overloadWarning() + s.days.map(function(day,i){
+  document.getElementById('daysList').innerHTML = pauseBanner() + (weekOff===0?fcAlert():'') + overloadWarning() + s.days.map(function(day,i){
     var wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
     var isToday=dates[i].toDateString()===todayStr;
     var isPast=dates[i]<today&&!isToday;
@@ -1472,7 +1471,7 @@ function renderWeek(){
       +progHtml
       +'<div class="day-body">'+dayBody(day,i,wo)+'</div>'
       +'</div>';
-  }).join('');
+  }).join('') + pauseFooter();
   // restore inputs values
   s.days.forEach(function(day,i){
     var wo=WORKOUTS[day.type]||{label:day.woLabel||day.type,exos:[],isRest:true};
@@ -1966,9 +1965,12 @@ function dayBody(day,i,wo){
     +'</div></div>';
   // Résultats
   if(day.type.indexOf('run')===0){
+    var hasG=!!(day.run&&day.run.g);
     h+='<div class="circuit-title" style="margin-top:14px">\ud83c\udfc3 R\u00e9sultats course</div>'
+      +'<button class="mini-btn gold" style="width:100%;margin:4px 0 8px" onclick="garminPick('+i+')">'+(hasG?'\ud83d\udd04 R\u00e9importer le CSV Garmin':'\ud83d\udce5 Importer le CSV Garmin (remplit tout)')+'</button>'
       +'<div class="frow"><div class="field"><label>Dur\u00e9e (min)</label><input type="number" inputmode="numeric" id="run-'+i+'-dur" onchange="saveRun('+i+')"></div>'
-      +'<div class="field"><label>Distance (km)</label><input type="number" inputmode="decimal" step="0.1" id="run-'+i+'-km" onchange="saveRun('+i+')"></div></div>';
+      +'<div class="field"><label>Distance (km)</label><input type="number" inputmode="decimal" step="0.1" id="run-'+i+'-km" onchange="saveRun('+i+')"></div></div>'
+      +garminCard(day,i);
   }
   var lastC2=null;
   var hasSets=(wo.exos||[]).some(function(e){return e.sets;});
@@ -2043,11 +2045,236 @@ function saveSet(i,ei,si,val,noPR){
 function saveRun(i){
   var s=getStore();
   var d=document.getElementById('run-'+i+'-dur'), k=document.getElementById('run-'+i+'-km');
-  s.days[i].run={dur:d?d.value:'',km:k?k.value:''};
+  var prev=s.days[i].run||{};
+  var nr={dur:d?d.value:'',km:k?k.value:''};
+  if(prev.g&&(nr.dur||nr.km))nr.g=prev.g; // on garde les données Garmin importées
+  s.days[i].run=nr;
   saveStore(s);
   syncSessionXp(i);
-  var dur=+(s.days[i].run.dur)||0;
-  if(dur&&['yes','mvw'].includes(s.days[i].done))checkRunBoss(dur);
+  var dur=+(nr.dur)||0;
+  if(dur&&['yes','mvw'].includes(s.days[i].done))checkRunBoss(dur,nr.g);
+}
+
+// ══════════ IMPORT GARMIN (CSV d'activité : tours / intervalles + Récapitulatif) ══════════
+function gNorm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,''); }
+function gNum(v){
+  if(v==null)return null;
+  v=String(v).replace(/[\s  ]/g,'').replace(',','.');
+  if(v===''||v==='--')return null;
+  var n=parseFloat(v); return isNaN(n)?null:n;
+}
+function gSec(v){ // "48:01" · "1:05:23" · "6:18,3"
+  if(v==null)return null;
+  v=String(v).trim().replace(',','.');
+  if(!v||v==='--')return null;
+  var p=v.split(':').map(Number); if(p.some(isNaN))return null;
+  var s=0; p.forEach(function(x){s=s*60+x;}); return s;
+}
+function fmtSec(s){
+  if(s==null)return '';
+  s=Math.round(s); var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return (h?h+':'+pd(m):m)+':'+pd(x);
+}
+function gPace(v){ var s=gSec(v); return s&&s>0?fmtSec(s):null; }
+function parseCsv(txt){
+  txt=String(txt).replace(/^\uFEFF/,'');
+  var first=txt.split(/\r?\n/)[0]||'';
+  var delim=(first.split(';').length>first.split(',').length)?';':',';
+  var rows=[],row=[],cur='',q=false;
+  for(var i=0;i<txt.length;i++){
+    var ch=txt[i];
+    if(q){ if(ch==='"'){ if(txt[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else if(ch==='"')q=true;
+    else if(ch===delim){row.push(cur);cur='';}
+    else if(ch==='\n'||ch==='\r'){
+      if(ch==='\r'&&txt[i+1]==='\n')i++;
+      row.push(cur);cur='';
+      if(row.length>1||row[0]!=='')rows.push(row);
+      row=[];
+    }
+    else cur+=ch;
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+var G_COLS={lap:['circuit','circuits','lap','laps','split','splits'],iv:['intervalle','interval','intervals'],step:['typedetape','steptype'],
+  dur:['duree','time'],km:['distance'],pace:['alluremoyenne','avgpace'],gap:['gapmoyenne','avggap'],
+  hr:['frequencecardiaquemoyenne','avghr'],hrMax:['frequencecardiaquemaximale','maxhr'],asc:['ascensiontotale','totalascent'],desc:['descentetotale','totaldescent'],
+  cad:['cadencedecoursemoyenne','avgruncadence'],cadMax:['cadencedecoursemaximale','maxruncadence'],gct:['tempsdecontactmoyenaveclesol','avggroundcontacttime'],
+  stride:['longueurmoyennedesfoulees','avgstridelength'],vo:['oscillationverticalemoyenne','avgverticaloscillation'],pow:['puissancemoyenne','avgpower'],
+  kcal:['calories'],temp:['temperaturemoyenne','avgtemperature'],best:['meilleureallure','bestpace'],mov:['tempsdedeplacement','movingtime'],movPace:['alluremoyenneendeplacement','avgmovingpace']};
+function gStepShort(t){
+  var n=gNorm(t);
+  if(!n||n==='--')return '';
+  if(/echauff|warm/.test(n))return 'Échauffement';
+  if(/recup|recover/.test(n))return 'Récupération';
+  if(/retouraucalme|cool/.test(n))return 'Retour au calme';
+  if(/repos|rest/.test(n))return 'Repos';
+  if(/course|run/.test(n))return 'Course';
+  return String(t).trim();
+}
+function parseGarminCsv(txt){
+  var rows=parseCsv(txt); if(rows.length<2)return null;
+  var head=rows[0].map(gNorm), col={};
+  Object.keys(G_COLS).forEach(function(k){ for(var j=0;j<head.length;j++){ if(G_COLS[k].indexOf(head[j])>=0){col[k]=j;break;} } });
+  if(col.dur==null||col.km==null)return null;
+  function cell(r,k){ return col[k]==null?null:r[col[k]]; }
+  function rowObj(r){
+    return {t:gStepShort(cell(r,'step')),n:String(cell(r,'lap')||'').trim(),sec:gSec(cell(r,'dur')),km:gNum(cell(r,'km')),
+      pace:gPace(cell(r,'pace')),hr:gNum(cell(r,'hr')),hrMax:gNum(cell(r,'hrMax')),cad:gNum(cell(r,'cad'))};
+  }
+  var sum=null, body=[];
+  rows.slice(1).forEach(function(r){
+    var isSum=r.slice(0,4).some(function(c){ var n=gNorm(c); return n==='recapitulatif'||n==='summary'||n==='total'; });
+    if(isSum)sum=r; else if(r.length>=head.length-1)body.push(r);
+  });
+  var g={src:'garmin',at:Date.now()};
+  if(sum){
+    g.sec=gSec(cell(sum,'dur')); g.km=gNum(cell(sum,'km')); g.pace=gPace(cell(sum,'pace')); g.gap=gPace(cell(sum,'gap'));
+    g.hr=gNum(cell(sum,'hr')); g.hrMax=gNum(cell(sum,'hrMax')); g.asc=gNum(cell(sum,'asc')); g.desc=gNum(cell(sum,'desc'));
+    g.cad=gNum(cell(sum,'cad')); g.cadMax=gNum(cell(sum,'cadMax')); g.gct=gNum(cell(sum,'gct')); g.stride=gNum(cell(sum,'stride'));
+    g.vo=gNum(cell(sum,'vo')); g.pow=gNum(cell(sum,'pow')); g.kcal=gNum(cell(sum,'kcal')); g.temp=gNum(cell(sum,'temp'));
+    g.best=gPace(cell(sum,'best')); g.mov=gSec(cell(sum,'mov')); g.movPace=gPace(cell(sum,'movPace'));
+  }
+  // Étapes (lignes "2 - 7" = bloc d'intervalle) et tours (lignes à numéro simple)
+  var ranges=[], singles=[], covered={};
+  body.forEach(function(r){
+    var o=rowObj(r);
+    var mR=/^(\d+)\s*-\s*(\d+)$/.exec(o.n);
+    if(mR){ ranges.push(o); for(var z=+mR[1];z<=+mR[2];z++)covered[z]=1; }
+    else if(/^\d+$/.test(o.n)&&o.sec!=null&&o.sec>=10)singles.push(o);
+  });
+  var segs=[], laps=[];
+  if(ranges.length){
+    body.forEach(function(r){
+      var o=rowObj(r);
+      if(/^\d+\s*-\s*\d+$/.test(o.n))segs.push(o);
+      else if(/^\d+$/.test(o.n)&&!covered[+o.n]&&o.sec!=null&&o.sec>=10)segs.push(o);
+    });
+    laps=singles.filter(function(o){return covered[+o.n];});
+  } else {
+    laps=singles;
+    var types={}; singles.forEach(function(o){if(o.t)types[o.t]=1;});
+    if(Object.keys(types).length>1)segs=singles.slice();
+  }
+  // Pas de ligne Récapitulatif : on reconstitue depuis les tours
+  if(g.sec==null||g.km==null){
+    var src=singles; if(!src.length)return null;
+    var ts=0,tk=0,hrw=0,hm=0,kc=0;
+    src.forEach(function(o){ ts+=o.sec||0; tk+=o.km||0; if(o.hr)hrw+=o.hr*(o.sec||0); if(o.hrMax&&o.hrMax>hm)hm=o.hrMax; });
+    body.forEach(function(r){ var c=gNum(cell(r,'kcal')); if(c&&/^\d+$/.test(String(cell(r,'lap')||'').trim()))kc+=c; });
+    g.sec=ts; g.km=Math.round(tk*100)/100; g.hr=ts?Math.round(hrw/ts):null; g.hrMax=hm||null; g.kcal=kc||null;
+    if(tk>0)g.pace=fmtSec(ts/tk);
+  }
+  if(!g.sec||g.km==null)return null;
+  // Plus long bloc couru d'une traite (pour le boss 10 km continu)
+  var runKm=0;
+  if(segs.length){
+    var acc=0; segs.forEach(function(o){ if(o.t==='Course'){acc+=(o.km||0); if(acc>runKm)runKm=acc;} else acc=0; });
+  } else runKm=g.km;
+  g.runKm=Math.round(runKm*100)/100;
+  g.segs=segs.map(gSlim); g.laps=laps.map(gSlim);
+  return g;
+}
+function gSlim(o){ var r={}; Object.keys(o).forEach(function(k){ if(o[k]!=null&&o[k]!=='')r[k]=o[k]; }); return r; }
+function garminPick(i,fromDash){
+  if(fromDash)weekOff=0;
+  var inp=document.createElement('input');
+  inp.type='file'; inp.style.display='none';
+  inp.onchange=function(){ var f=inp.files&&inp.files[0]; if(f)garminRead(f,i); try{inp.remove();}catch(e){} };
+  document.body.appendChild(inp); inp.click();
+}
+function garminRead(f,i){
+  var r=new FileReader();
+  r.onload=function(e){
+    var g=null; try{ g=parseGarminCsv(e.target.result); }catch(er){ g=null; }
+    if(!g){ toast('⚠️ Fichier non reconnu — il faut le CSV d’activité Garmin (tours + ligne « Récapitulatif »)'); return; }
+    g.file=f.name||''; applyGarmin(i,g);
+  };
+  r.onerror=function(){ toast('⚠️ Lecture du fichier impossible'); };
+  r.readAsText(f);
+}
+function applyGarmin(i,g){
+  var s=getStore(), day=s.days[i];
+  if(!day||day.type.indexOf('run')!==0){ toast('⚠️ Import réservé aux jours de course'); return; }
+  if(day.run&&day.run.g&&!confirm('Ce jour contient déjà un run Garmin ('+fmtSec(day.run.g.sec)+' · '+day.run.g.km+' km). Le remplacer ?'))return;
+  var dur=Math.round(g.sec/60);
+  day.run={dur:String(dur),km:String(Math.round(g.km*100)/100),g:g};
+  saveStore(s);
+  if(!['yes','mvw'].includes(day.done)) setDone(i,'yes'); // XP calculée avec la vraie durée + boss
+  else { syncSessionXp(i); checkRunBoss(dur,g); renderWeek(); renderHeader(); }
+  subTabState[i]='form';
+  var c=document.getElementById('day-'+i); if(c)c.classList.add('open');
+  try{ switchSub(i,'form'); }catch(e){}
+  try{ if(document.getElementById('tab-dash')&&document.getElementById('tab-dash').classList.contains('active'))renderDash(); }catch(e){}
+  setTimeout(function(){ toast('⌚ Run importé : '+dur+' min · '+g.km+' km'+(g.pace?' · '+g.pace+'/km':'')+(g.hr?' · FC '+g.hr:'')); },1400);
+}
+function garminClear(i){
+  if(!confirm('Retirer le run Garmin importé de ce jour (durée et distance comprises) ?'))return;
+  var s=getStore(); s.days[i].run={}; saveStore(s); syncSessionXp(i);
+  renderWeek(); subTabState[i]='form';
+  var c=document.getElementById('day-'+i); if(c)c.classList.add('open');
+  try{ switchSub(i,'form'); }catch(e){}
+}
+// Résumé court (journal, exports)
+function garminShort(g){
+  if(!g)return '';
+  var b=[];
+  if(g.pace)b.push(g.pace+'/km');
+  if(g.hr)b.push('FC '+g.hr+(g.hrMax?'/'+g.hrMax:''));
+  if(g.cad)b.push(g.cad+' spm');
+  if(g.asc!=null)b.push('D+ '+g.asc+' m');
+  if(g.kcal)b.push(g.kcal+' kcal');
+  return b.join(' · ');
+}
+function gSegTxt(o){
+  return (o.t||('Tour '+o.n))+' '+fmtSec(o.sec)+(o.km!=null?' · '+o.km+' km':'')+(o.pace?' · '+o.pace+'/km':'')+(o.hr?' · FC '+o.hr+(o.hrMax?' (max '+o.hrMax+')':''):'');
+}
+function gLapTxt(o){ return (o.km!=null?o.km+' km ':'')+(o.pace||fmtSec(o.sec))+(o.hr?' FC '+o.hr:''); }
+function gDrift(g){
+  var L=(g.laps||[]).filter(function(o){return o.pace&&o.hr;});
+  if(L.length<3)return '';
+  var a=L[0], z=L[L.length-1], dh=z.hr-a.hr;
+  return '1er → dernier tour : allure '+a.pace+' → '+z.pace+' · FC '+a.hr+' → '+z.hr+' ('+(dh>=0?'+':'')+dh+' bpm)';
+}
+// Bloc détaillé pour le bilan coach
+function garminBilanTxt(g){
+  var t='', l1=[], l2=[], l3=[];
+  if(g.pace)l1.push('Allure moy '+g.pace+'/km'+(g.gap?' (GAP '+g.gap+')':''));
+  if(g.hr)l1.push('FC moy '+g.hr+(g.hrMax?' / max '+g.hrMax:''));
+  if(g.cad)l1.push('Cadence '+g.cad+' spm'+(g.cadMax?' (max '+g.cadMax+')':''));
+  if(g.asc!=null)l2.push('D+ '+g.asc+' m'+(g.desc!=null?' / D- '+g.desc+' m':''));
+  if(g.kcal)l2.push(g.kcal+' kcal');
+  if(g.temp!=null)l2.push(g.temp+' °C');
+  if(g.mov)l2.push('en mouvement '+fmtSec(g.mov));
+  if(g.best)l2.push('meilleure allure '+g.best+'/km');
+  if(g.stride)l3.push('Foulée '+g.stride+' m');
+  if(g.gct)l3.push('contact sol '+g.gct+' ms');
+  if(g.vo)l3.push('oscillation '+g.vo+' cm');
+  if(g.pow)l3.push('puissance '+g.pow+' W');
+  if(l1.length)t+='  ⌚ '+l1.join(' · ')+'\n';
+  if(l2.length)t+='  ⛰️ '+l2.join(' · ')+'\n';
+  if(l3.length)t+='  🦶 '+l3.join(' · ')+'\n';
+  if(g.segs&&g.segs.length)t+='  🧩 Étapes : '+g.segs.map(gSegTxt).join(' → ')+'\n';
+  if(g.laps&&g.laps.length>=2)t+='  📏 Tours : '+g.laps.map(gLapTxt).join(' | ')+'\n';
+  var dr=gDrift(g); if(dr)t+='  📈 '+dr+'\n';
+  return t;
+}
+// Carte affichée sous les champs de la course
+function garminCard(day,i){
+  var g=day.run&&day.run.g; if(!g)return '';
+  var chip=function(v,l){return '<div style="background:var(--bg3);border-radius:10px;padding:7px 4px;text-align:center"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700">'+v+'</div><div style="font-size:10px;color:var(--muted2)">'+l+'</div></div>';};
+  var h='<div style="border:1px solid var(--border2);border-radius:12px;padding:10px;margin-top:8px">'
+    +'<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted2);margin-bottom:8px"><span>⌚ Données Garmin</span>'+(g.file?'<span style="opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%">'+esc(g.file)+'</span>':'')+'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">'
+    +chip(g.pace||'—','allure /km')+chip(g.hr?(g.hr+(g.hrMax?'<span style="font-size:12px;color:var(--muted2)">/'+g.hrMax+'</span>':'')):'—','FC moy/max')+chip(g.cad||'—','cadence')
+    +chip(g.asc!=null?'+'+g.asc+' m':'—','dénivelé')+chip(g.kcal||'—','kcal')+chip(g.temp!=null?g.temp+'°':'—','temp.')
+    +'</div>';
+  if(g.segs&&g.segs.length)h+='<div style="font-size:11px;color:var(--muted2);margin-top:8px;line-height:1.55">🧩 '+g.segs.map(function(o){return esc(gSegTxt(o));}).join('<br>🧩 ')+'</div>';
+  if(g.laps&&g.laps.length>=2)h+='<div style="font-size:11px;color:var(--muted2);margin-top:6px;line-height:1.55">📏 '+g.laps.map(function(o){return esc(gLapTxt(o));}).join(' · ')+'</div>';
+  var dr=gDrift(g); if(dr)h+='<div style="font-size:11px;color:var(--muted2);margin-top:6px">📈 '+esc(dr)+'</div>';
+  h+='<div style="margin-top:8px;text-align:right"><button class="mini-btn" onclick="garminClear('+i+')">🗑️ Retirer</button></div></div>';
+  return h;
 }
 function saveField(i,f,val){
   var s=getStore(); s.days[i][f]=val; saveStore(s);
@@ -2201,7 +2428,7 @@ function setDone(i,val){
   // Boss course auto (si la dur\u00e9e est d\u00e9j\u00e0 saisie)
   if(wo.xpSkill==='endur'&&['yes','mvw'].includes(day.done)){
     var dur0=+(day.run&&day.run.dur)||0;
-    if(dur0)checkRunBoss(dur0);
+    if(dur0)checkRunBoss(dur0,day.run&&day.run.g);
   }
   // Semaine parfaite : une seule fois par semaine, jamais farmable
   var s2=getStore();
@@ -2292,8 +2519,9 @@ function checkPR(exo,dayI,setI,val){
     if(exo==='Planche'){if(val>=60)beatBoss('core','c60planche',true);if(val>=120)beatBoss('core','c2min',true);}
   }
 }
-function checkRunBoss(dur){
+function checkRunBoss(dur,g){
   if(dur>=30)beatBoss('endur','e30min',true);
+  if(g&&g.runKm>=10)beatBoss('endur','e10k',true); // bloc couru d'une traite, mesuré par la montre
 }
 function beatBoss(skill,id,auto){
   var x=getXp();
@@ -2455,6 +2683,10 @@ function genBilan(){
   var t='\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n';
   t+='\u2694\ufe0f BILAN SPORT ASCENSION \u2014 '+fmtD(dates[0])+' au '+fmtD(dates[6])+'\n';
   t+='\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n\n';
+  var ciB=cycleInfo(getMon(weekOff));
+  t+='\ud83d\udd04 '+(ciB?(ciB.pause?'Semaine en pause (maladie/blessure) \u2014 hors cycle, reprise cycle '+ciB.cn+' semaine '+ciB.cw+'/4':'Cycle '+ciB.cn+' \u00b7 Semaine '+ciB.cw+'/4 \u2014 '+CYCLE_LABELS[ciB.cw].n):'Avant le cycle 1')+'\n';
+  if(getCyclePauses().length)t+='   Semaine(s) en pause depuis le d\u00e9part : '+fmtPauses()+' (cycleStart reste '+getCycleStart()+')\n';
+  t+='\n';
   t+='\ud83c\udff0 PERSONNAGE\n';
   t+='\u2022 Level global : '+globalLevel()+'\n';
   t+='\u2022 Force '+lv.force+' \u2022 Endurance '+lv.endur+' \u2022 Core '+lv.core+' \u2022 Discipline '+lv.disc+' \u2022 Shape '+lv.shape+'\n';
@@ -2480,7 +2712,10 @@ function genBilan(){
     if(d.note)t+='Note s\u00e9ance : '+d.note+'/10\n';
     if(d.vo2)t+='VO2max : '+d.vo2+' ml/kg/min\n';
     if(d.zones&&d.zones.length)t+='Zones courbatures : '+d.zones.join(', ')+'\n';
-    if(d.run&&d.run.dur)t+='Course : '+d.run.dur+' min'+(d.run.km?' \u2022 '+d.run.km+' km':'')+'\n';
+    if(d.run&&d.run.dur){
+      t+='Course : '+d.run.dur+' min'+(d.run.km?' \u2022 '+d.run.km+' km':'')+(d.run.g?' (montre Garmin)':'')+'\n';
+      if(d.run.g)t+=garminBilanTxt(d.run.g);
+    }
     Object.keys(d.sets||{}).forEach(function(exo){
       var v=(d.sets[exo]||[]).filter(function(x){return x!==''&&x!=null;});
       if(v.length)t+='  '+exo+' \u2192 '+v.join(' / ')+'\n';
@@ -2592,7 +2827,7 @@ function renderJournal(){
           var v=(d.sets[exo]||[]).filter(function(x){return x!==''&&x!=null;});
           if(v.length)res.push(exo+' '+v.join('/'));
         });
-        if(d.run&&d.run.dur)res.push('Course '+d.run.dur+'min'+(d.run.km?' '+d.run.km+'km':''));
+        if(d.run&&d.run.dur)res.push('Course '+d.run.dur+'min'+(d.run.km?' '+d.run.km+'km':'')+(d.run.g&&d.run.g.pace?' '+d.run.g.pace+'/km':'')+(d.run.g&&d.run.g.hr?' FC '+d.run.g.hr:''));
         entries.push({ts:dt.getTime(),date:pd(dt.getDate())+'/'+pd(dt.getMonth()+1),label:d.woLabel||TYPE_LABELS[d.type]||d.type,done:d.done,res:res,notes:d.notes||''});
       });
     }catch(e){}
@@ -2970,11 +3205,9 @@ function computeCycles(){
   var tonMap={}; ton.forEach(function(x){tonMap[x.key]=x;});
   var cycles={};
   w.forEach(function(x){
-    var y=Math.floor(x.key/10000),mo=Math.floor(x.key/100)%100,da=x.key%100;
-    var mon=new Date(y,mo-1,da);
-    var diff=Math.round((mon-sd)/(7*86400000));
-    if(diff<0)return;
-    var cn=Math.floor(diff/4)+1;
+    var ci=cycleInfoKey(x.key);
+    if(!ci||ci.pause)return; // avant le cycle 1 ou semaine en pause : hors cycle
+    var cn=ci.cn;
     if(!cycles[cn])cycles[cn]={n:cn,weeks:0,series:0,runMin:0,runKm:0,tonnage:0,quests:0,poidsFirst:null,poidsLast:null,pompes:0,planche:0,runMax:0};
     var c=cycles[cn];
     c.weeks++;
@@ -3133,9 +3366,9 @@ function exportCycleDoc(){
     if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
     var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
     var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
-    var diff=Math.round((mon-sd)/(7*86400000));
-    var cyc=diff>=0?Math.floor(diff/4)+1:0;
-    try{var s=JSON.parse(localStorage.getItem(k)); if(s&&s.days)allWeeks.push({key:dn,mon:mon,cyc:cyc,cw:diff>=0?(diff%4)+1:0,s:s});}catch(e){}
+    var ci=cycleInfoKey(dn);
+    var cyc=ci?ci.cn:0;
+    try{var s=JSON.parse(localStorage.getItem(k)); if(s&&s.days)allWeeks.push({key:dn,mon:mon,cyc:cyc,cw:ci?ci.cw:0,pause:!!(ci&&ci.pause),s:s});}catch(e){}
   }
   allWeeks.sort(function(a,b){return a.key-b.key;});
   // Écarte les semaines antérieures au cycle 1 sans aucune activité enregistrée
@@ -3145,7 +3378,7 @@ function exportCycleDoc(){
       return d.done||Object.keys(d.sets||{}).length||(d.run&&(d.run.dur||d.run.km));
     });
   });
-  var cycWeeks=allWeeks.filter(function(w){return w.cyc===cn;});
+  var cycWeeks=allWeeks.filter(function(w){return w.cyc===cn&&!w.pause;});
   var vol=getWeeklyVolume(), ton=getWeeklyTonnage();
   var vMap={},tMap={};
   vol.forEach(function(x){vMap[x.key]=x;}); ton.forEach(function(x){tMap[x.key]=x;});
@@ -3167,7 +3400,7 @@ function exportCycleDoc(){
     +'</style></head><body>';
 
   html+='<h1>⚔️ Sport Ascension — Récap Cycle '+cn+'</h1>';
-  html+='<p class="muted">Généré le '+new Date().toLocaleString('fr-FR')+' · '+APP_VERSION+' · Cycle démarré le '+start.slice(6,8)+'/'+start.slice(4,6)+'/'+start.slice(0,4)+'</p>';
+  html+='<p class="muted">Généré le '+new Date().toLocaleString('fr-FR')+' · '+APP_VERSION+' · Cycle démarré le '+start.slice(6,8)+'/'+start.slice(4,6)+'/'+start.slice(0,4)+(getCyclePauses().length?' · Semaine(s) en pause : '+fmtPauses():'')+'</p>';
 
   // ════ 1. CARTE PERSONNAGE — ÉVOLUTION ════
   html+='<h2>🎭 Carte personnage</h2>';
@@ -3264,10 +3497,10 @@ function exportCycleDoc(){
     var drs=[],fcs=[];
     days.forEach(function(d){var sc=drScore(d);if(sc!=null)drs.push(sc);if(+d.fc)fcs.push(+d.fc);});
     var v=vMap[w.key]||{}, t=tMap[w.key]||{};
-    var phase=w.cw&&CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'—';
+    var phase=w.pause?'🤒 Pause':(w.cw&&CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'—');
     // séances validées mais aucune série saisie → données incomplètes
     var incomplete = q>0 && !(v.series>0) && !(v.runMin>0);
-    html+='<tr'+(w.cyc===cn?' class="tot"':'')+'><td>'+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+(incomplete?' <span title="séances validées sans résultats saisis">⚠️</span>':'')+'</td><td>C'+(w.cyc||'—')+'</td><td>'+esc(phase)+'</td><td>'+q+'/'+tt+'</td><td>'+(v.series||0)+'</td><td>'+(t.kg||0)+' kg</td><td>'+(v.runMin||0)+' min</td><td>'+fx(v.runKm||0)+' km</td><td>'+(w.s.poids?w.s.poids+' kg':'—')+'</td><td>'+(w.s.xpWeek||0)+'</td>'
+    html+='<tr'+(w.cyc===cn&&!w.pause?' class="tot"':'')+'><td>'+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+(incomplete?' <span title="séances validées sans résultats saisis">⚠️</span>':'')+'</td><td>'+(w.pause?'—':'C'+(w.cyc||'—'))+'</td><td>'+esc(phase)+'</td><td>'+q+'/'+tt+'</td><td>'+(v.series||0)+'</td><td>'+(t.kg||0)+' kg</td><td>'+(v.runMin||0)+' min</td><td>'+fx(v.runKm||0)+' km</td><td>'+(w.s.poids?w.s.poids+' kg':'—')+'</td><td>'+(w.s.xpWeek||0)+'</td>'
       +'<td>'+(drs.length?Math.round(drs.reduce(function(a,b){return a+b;},0)/drs.length)+'/40':'—')+'</td>'
       +'<td>'+(fcs.length?Math.round(fcs.reduce(function(a,b){return a+b;},0)/fcs.length):'—')+'</td></tr>';
   });
@@ -3375,6 +3608,17 @@ function exportCycleDoc(){
     if(nonSaisis>0)html+='<div class="warn">⚠️ '+nonSaisis+' jour(s) sans aucune saisie — les moyennes portent sur '+nn+' journée(s) complète(s).</div>';
   } else html+='<p class="muted">Aucune journée nutrition saisie sur ce cycle.</p>';
 
+  // ════ 9b. COURSES (MONTRE) ════
+  var gRuns=[];
+  cycWeeks.forEach(function(w){ (w.s.days||[]).forEach(function(d,di){ if(d.run&&d.run.g){var dt=new Date(w.mon);dt.setDate(w.mon.getDate()+di);gRuns.push({dt:dt,r:d.run});} }); });
+  if(gRuns.length){
+    html+='<h2>🏃 Courses du cycle (données montre)</h2><table><tr><th>Date</th><th>Durée</th><th>Distance</th><th>Allure</th><th>FC moy/max</th><th>Cadence</th><th>D+</th><th>Bloc couru</th></tr>';
+    gRuns.forEach(function(x){var g=x.r.g;
+      html+='<tr><td>'+DN[x.dt.getDay()]+' '+pd(x.dt.getDate())+'/'+pd(x.dt.getMonth()+1)+'</td><td>'+fmtSec(g.sec)+'</td><td>'+g.km+' km</td><td>'+(g.pace||'—')+'</td><td>'+(g.hr||'—')+(g.hrMax?'/'+g.hrMax:'')+'</td><td>'+(g.cad||'—')+'</td><td>'+(g.asc!=null?g.asc+' m':'—')+'</td><td>'+(g.runKm||'—')+' km</td></tr>';
+    });
+    html+='</table>';
+  }
+
   // ════ 10. JOURNAL D'AVENTURE ════
   html+='<h2>📖 Journal d\u2019aventure du cycle '+cn+'</h2>';
   html+='<p class="muted">Chronologie de chaque séance : ce qui a été fait, ressenti, et les faits marquants.</p>';
@@ -3404,7 +3648,7 @@ function exportCycleDoc(){
         var tot=kg?v.reduce(function(a,b){return a+(+b);},0)*kg:0;
         rows+='<tr><td>'+esc(e.n)+'</td><td>'+esc(e.g||'')+'</td><td>'+esc(e.t||'')+'</td><td><b>'+v.join(' / ')+'</b></td><td>'+esc(band)+(kg?' ('+kg+'kg)':'')+'</td><td>'+(tot?tot+' kg':'')+'</td></tr>';
       });
-      if(d.run&&(d.run.dur||d.run.km))rows+='<tr><td>Course</td><td>Course à pied</td><td>—</td><td><b>'+(d.run.dur||'—')+' min'+(d.run.km?' · '+d.run.km+' km':'')+'</b></td><td></td><td></td></tr>';
+      if(d.run&&(d.run.dur||d.run.km))rows+='<tr><td>Course</td><td>Course à pied</td><td>—</td><td><b>'+(d.run.dur||'—')+' min'+(d.run.km?' · '+d.run.km+' km':'')+'</b>'+(d.run.g?'<br>'+esc(garminShort(d.run.g))+(d.run.g.segs&&d.run.g.segs.length?'<br><span class="muted">'+esc(d.run.g.segs.map(gSegTxt).join(' → '))+'</span>':''):'')+'</td><td></td><td></td></tr>';
       if(rows)html+='<table><tr><th>Exercice</th><th>Nom Garmin</th><th>Cible</th><th>Réalisé</th><th>Élastique</th><th>Tonnage</th></tr>'+rows+'</table>';
       if(d.notes)html+='<div style="font-style:italic;color:#555;margin-top:3px">« '+esc(d.notes)+' »</div>';
       html+='</div>';
@@ -3441,9 +3685,9 @@ function exportCycleMd(){
     if(!k||k.indexOf(KEY_PREFIX)!==0)continue;
     var dn=parseInt(k.slice(KEY_PREFIX.length),10); if(isNaN(dn))continue;
     var mon=new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100);
-    var diff=Math.round((mon-sd)/(7*86400000));
-    var cyc=diff>=0?Math.floor(diff/4)+1:0;
-    try{var s=JSON.parse(localStorage.getItem(k)); if(s&&s.days)allWeeks.push({key:dn,mon:mon,cyc:cyc,cw:diff>=0?(diff%4)+1:0,s:s});}catch(e){}
+    var ci=cycleInfoKey(dn);
+    var cyc=ci?ci.cn:0;
+    try{var s=JSON.parse(localStorage.getItem(k)); if(s&&s.days)allWeeks.push({key:dn,mon:mon,cyc:cyc,cw:ci?ci.cw:0,pause:!!(ci&&ci.pause),s:s});}catch(e){}
   }
   allWeeks.sort(function(a,b){return a.key-b.key;});
   // Écarte les semaines antérieures au cycle 1 sans aucune activité enregistrée
@@ -3453,7 +3697,7 @@ function exportCycleMd(){
       return d.done||Object.keys(d.sets||{}).length||(d.run&&(d.run.dur||d.run.km));
     });
   });
-  var cycWeeks=allWeeks.filter(function(w){return w.cyc===cn;});
+  var cycWeeks=allWeeks.filter(function(w){return w.cyc===cn&&!w.pause;});
   var vol=getWeeklyVolume(), ton=getWeeklyTonnage();
   var vMap={},tMap={};
   vol.forEach(function(x){vMap[x.key]=x;}); ton.forEach(function(x){tMap[x.key]=x;});
@@ -3472,7 +3716,7 @@ function exportCycleMd(){
 
   var m='# ⚔️ Sport Ascension — Récap Cycle '+cn+'\n\n';
   m+='> Généré le '+new Date().toLocaleString('fr-FR')+' · '+APP_VERSION+'  \n';
-  m+='> Cycle démarré le '+start.slice(6,8)+'/'+start.slice(4,6)+'/'+start.slice(0,4)+' · '+cycWeeks.length+' semaine(s) enregistrée(s)\n\n';
+  m+='> Cycle démarré le '+start.slice(6,8)+'/'+start.slice(4,6)+'/'+start.slice(0,4)+' · '+cycWeeks.length+' semaine(s) enregistrée(s)'+(getCyclePauses().length?' · Semaine(s) en pause : '+fmtPauses():'')+'\n\n';
   m+='---\n\n';
 
   // ── Carte personnage ──
@@ -3563,10 +3807,10 @@ function exportCycleMd(){
     var drs=[],fcs=[];
     days.forEach(function(d){var sc=drScore(d);if(sc!=null)drs.push(sc);if(+d.fc)fcs.push(+d.fc);});
     var v=vMap[w.key]||{}, t=tMap[w.key]||{};
-    var phase=w.cw&&CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'—';
-    var hl=w.cyc===cn?'**':'';
+    var phase=w.pause?'🤒 Pause':(w.cw&&CYCLE_LABELS[w.cw]?CYCLE_LABELS[w.cw].n:'—');
+    var hl=w.cyc===cn&&!w.pause?'**':'';
     var incomplete = q>0 && !(v.series>0) && !(v.runMin>0);
-    m+='| '+hl+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+hl+(incomplete?' ⚠️':'')+' | C'+(w.cyc||'—')+' | '+esc(phase)+' | '+q+'/'+tt+' | '+(v.series||0)+' | '+(t.kg||0)+' | '+(v.runMin||0)+' min | '+fx(v.runKm||0)+' km | '+(w.s.poids?w.s.poids+' kg':'—')+' | '+(w.s.xpWeek||0)+' | '
+    m+='| '+hl+pd(w.mon.getDate())+'/'+pd(w.mon.getMonth()+1)+hl+(incomplete?' ⚠️':'')+' | '+(w.pause?'—':'C'+(w.cyc||'—'))+' | '+esc(phase)+' | '+q+'/'+tt+' | '+(v.series||0)+' | '+(t.kg||0)+' | '+(v.runMin||0)+' min | '+fx(v.runKm||0)+' km | '+(w.s.poids?w.s.poids+' kg':'—')+' | '+(w.s.xpWeek||0)+' | '
       +(drs.length?Math.round(drs.reduce(function(a,b){return a+b;},0)/drs.length):'—')+' | '
       +(fcs.length?Math.round(fcs.reduce(function(a,b){return a+b;},0)/fcs.length):'—')+' |\n';
   });
@@ -3664,6 +3908,17 @@ function exportCycleMd(){
     if(nonSaisis2>0)m+='> ⚠️ '+nonSaisis2+' jour(s) sans aucune saisie — moyennes calculées sur '+nn+' journée(s) complète(s).\n\n';
   } else m+='*Aucune journée nutrition saisie sur ce cycle.*\n\n';
 
+  // ── Courses (montre) ──
+  var gRuns2=[];
+  cycWeeks.forEach(function(w){ (w.s.days||[]).forEach(function(d,di){ if(d.run&&d.run.g){var dt=new Date(w.mon);dt.setDate(w.mon.getDate()+di);gRuns2.push({dt:dt,r:d.run});} }); });
+  if(gRuns2.length){
+    m+='---\n\n## 🏃 Courses du cycle (données montre)\n\n| Date | Durée | Distance | Allure | FC moy/max | Cadence | D+ | Bloc couru |\n|---|---|---|---|---|---|---|---|\n';
+    gRuns2.forEach(function(x){var g=x.r.g;
+      m+='| '+DN[x.dt.getDay()]+' '+pd(x.dt.getDate())+'/'+pd(x.dt.getMonth()+1)+' | '+fmtSec(g.sec)+' | '+g.km+' km | '+(g.pace||'—')+' | '+(g.hr||'—')+(g.hrMax?'/'+g.hrMax:'')+' | '+(g.cad||'—')+' | '+(g.asc!=null?g.asc+' m':'—')+' | '+(g.runKm||'—')+' km |\n';
+    });
+    m+='\n';
+  }
+
   // ── Journal d'aventure ──
   m+='---\n\n## 📖 Journal d\u2019aventure\n\n';
   cycWeeks.forEach(function(w){
@@ -3692,7 +3947,8 @@ function exportCycleMd(){
         var tot=kg?v.reduce(function(a,b){return a+(+b);},0)*kg:0;
         rows+='| '+esc(e.n)+' | '+esc(e.g||'')+' | '+esc(e.t||'')+' | **'+v.join(' / ')+'** | '+esc(band)+(kg?' ('+kg+'kg)':'')+' | '+(tot?tot+' kg':'')+' |\n';
       });
-      if(d.run&&(d.run.dur||d.run.km))rows+='| Course | Course à pied | — | **'+(d.run.dur||'—')+' min'+(d.run.km?' · '+d.run.km+' km':'')+'** | | |\n';
+      if(d.run&&(d.run.dur||d.run.km))rows+='| Course | Course à pied | — | **'+(d.run.dur||'—')+' min'+(d.run.km?' · '+d.run.km+' km':'')+'**'+(d.run.g?' · '+esc(garminShort(d.run.g)):'')+' | | |\n';
+      if(d.run&&d.run.g&&d.run.g.segs&&d.run.g.segs.length)rows+='| ↳ Étapes | | | '+esc(d.run.g.segs.map(gSegTxt).join(' → '))+' | | |\n';
       if(rows)m+='| Exercice | Nom Garmin | Cible | Réalisé | Élastique | Tonnage |\n|---|---|---|---|---|---|\n'+rows+'\n';
       if(d.notes)m+='*« '+esc(d.notes)+' »*\n\n';
     });
@@ -3859,9 +4115,18 @@ function getScopeWeekKeys(){
   if(all.indexOf(cur)<0)all.push(cur);
   if(statsScope==='all'){all.sort();return all;}
   // cycle : depuis le lundi de la semaine 1 du cycle courant
-  var cw=getCycleWeek(0)||1;
-  var first=parseInt(getKey(-(cw-1)),10);
-  return all.filter(function(d){return d>=first&&d<=cur;}).sort();
+  var ci0=cycleInfo(getMon(0)), first=cur;
+  if(ci0){
+    for(var o=0;o>-80;o--){
+      var cio=cycleInfo(getMon(o));
+      if(!cio||cio.cn!==ci0.cn)break;
+      if(!cio.pause)first=parseInt(getKey(o),10);
+    }
+  }
+  return all.filter(function(d){
+    if(d<first||d>cur)return false;
+    var c=cycleInfoKey(d); return d===cur||!(c&&c.pause);
+  }).sort();
 }
 function getScopeDays(){
   var keys=getScopeWeekKeys();
@@ -3989,31 +4254,82 @@ function getCycleStart(){
   if(!v){ v='20260720'; localStorage.setItem('sa_cycle_start',v); }
   return v;
 }
-function getCycleWeek(off){
-  var start=getCycleStart();
-  var sd=new Date(start.slice(0,4),start.slice(4,6)-1,start.slice(6,8));
-  var cur=getMon(off===undefined?weekOff:off);
-  var diff=Math.round((cur-sd)/(7*86400000));
-  if(diff<0)return null;
-  return (diff%4)+1;
+function monKey(d){ return ''+d.getFullYear()+pd(d.getMonth()+1)+pd(d.getDate()); }
+// Ramène n'importe quelle date AAAAMMJJ à son lundi
+function toMonKey(x){
+  x=String(x); if(!/^\d{8}$/.test(x))return null;
+  var d=new Date(+x.slice(0,4),+x.slice(4,6)-1,+x.slice(6,8)), wd=d.getDay();
+  d.setDate(d.getDate()-wd+(wd===0?-6:1)); return monKey(d);
 }
-// Numéro du cycle courant (1, 2, 3...)
-function getCycleNum(off){
+// Semaines en pause (maladie, blessure) : lundis exclus du décompte des cycles
+function getCyclePauses(){
+  try{ var a=JSON.parse(localStorage.getItem('sa_cycle_pauses')||'[]'); return Array.isArray(a)?a.map(String).filter(function(x){return /^\d{8}$/.test(x);}):[]; }
+  catch(e){ return []; }
+}
+function setCyclePauses(a){
+  var u={}; (a||[]).forEach(function(x){ var m=toMonKey(x); if(m)u[m]=1; });
+  localStorage.setItem('sa_cycle_pauses',JSON.stringify(Object.keys(u).sort()));
+}
+// Position d'un lundi dans les cycles, pauses déduites.
+// null avant le départ, sinon {cn, cw, pause}. Une semaine en pause porte le cycle/la semaine qui reprendra juste après.
+function cycleInfo(mon){
   var start=getCycleStart();
   var sd=new Date(start.slice(0,4),start.slice(4,6)-1,start.slice(6,8));
-  var cur=getMon(off===undefined?weekOff:off);
-  var diff=Math.round((cur-sd)/(7*86400000));
-  if(diff<0)return null;
-  return Math.floor(diff/4)+1;
+  var raw=Math.round((mon-sd)/(7*86400000));
+  if(raw<0)return null;
+  var mk=+monKey(mon), before=0, isP=false;
+  getCyclePauses().forEach(function(p){ p=+p; if(p===mk)isP=true; else if(p<mk&&p>=+start)before++; });
+  var idx=raw-before;
+  return {cn:Math.floor(idx/4)+1, cw:(idx%4)+1, pause:isP, idx:idx};
+}
+function cycleInfoKey(dn){ dn=+dn; return cycleInfo(new Date(Math.floor(dn/10000),Math.floor(dn/100)%100-1,dn%100)); }
+function getCycleWeek(off){ var ci=cycleInfo(getMon(off===undefined?weekOff:off)); return ci?ci.cw:null; }
+// Numéro du cycle courant (1, 2, 3...)
+function getCycleNum(off){ var ci=cycleInfo(getMon(off===undefined?weekOff:off)); return ci?ci.cn:null; }
+function isPauseWeek(off){ var ci=cycleInfo(getMon(off===undefined?weekOff:off)); return !!(ci&&ci.pause); }
+function cycleLabel(ci){
+  if(!ci)return 'Reprise';
+  if(ci.pause)return '🤒 Pause · reprise C'+ci.cn+' S'+ci.cw;
+  return 'Cycle '+ci.cn+' · Semaine '+ci.cw+'/4 — '+CYCLE_LABELS[ci.cw].n;
+}
+function fmtPauses(){
+  return getCyclePauses().map(function(p){return p.slice(6,8)+'/'+p.slice(4,6);}).join(', ');
 }
 function renderCycleBadge(){
   var el=document.getElementById('cycleBadge'); if(!el)return;
-  var cw=getCycleWeek();
-  if(cw==null){el.textContent='';return;}
-  var c=CYCLE_LABELS[cw];
-  var cycleN=Math.floor(Math.round((getMon(weekOff)-new Date(getCycleStart().slice(0,4),getCycleStart().slice(4,6)-1,getCycleStart().slice(6,8)))/(7*86400000))/4)+1;
-  el.innerHTML='<span style="color:'+c.c+';font-weight:800;letter-spacing:.5px">Cycle '+cycleN+' \u00b7 Semaine '+cw+'/4 \u2014 '+c.n+'</span>'
+  var ci=cycleInfo(getMon(weekOff));
+  if(!ci){el.textContent='';return;}
+  if(ci.pause){
+    el.innerHTML='<span style="color:var(--orange);font-weight:800;letter-spacing:.5px">🤒 Pause — hors cycle</span>'
+      +'<span style="color:var(--muted);margin-left:5px">reprise C'+ci.cn+' · S'+ci.cw+'</span>';
+    return;
+  }
+  var c=CYCLE_LABELS[ci.cw];
+  el.innerHTML='<span style="color:'+c.c+';font-weight:800;letter-spacing:.5px">Cycle '+ci.cn+' · Semaine '+ci.cw+'/4 — '+c.n+'</span>'
     +'<span style="color:var(--muted);margin-left:5px">'+c.d+'</span>';
+}
+// Bandeau + bouton pause dans l'onglet Quêtes
+function pauseBanner(){
+  if(!isPauseWeek(weekOff))return '';
+  return '<div class="card" style="border:1px solid rgba(255,159,10,.35);padding:11px 13px;margin-bottom:9px;font-size:12px;line-height:1.5">'
+    +'<b style="color:var(--orange)">🤒 Semaine en pause</b> — elle ne compte pas dans le cycle, les semaines suivantes sont décalées d’une semaine.'
+    +'<div style="margin-top:8px"><button class="mini-btn" onclick="togglePauseWeek()">↩️ Annuler la pause</button></div></div>';
+}
+function pauseFooter(){
+  if(!cycleInfo(getMon(weekOff))||isPauseWeek(weekOff))return '';
+  return '<div style="text-align:center;margin:14px 0 4px"><button class="mini-btn" style="opacity:.8" onclick="togglePauseWeek()">🤒 Mettre cette semaine en pause (maladie / blessure)</button></div>';
+}
+function togglePauseWeek(){
+  var k=getKey(weekOff), a=getCyclePauses(), ix=a.indexOf(k);
+  if(ix>=0){
+    a.splice(ix,1); setCyclePauses(a);
+    toast('▶️ Semaine réintégrée — '+cycleLabel(cycleInfo(getMon(0))));
+  } else {
+    if(!confirm('Mettre la semaine du '+fmtD(getMon(weekOff))+' en pause ?\n\nElle sort du décompte des cycles et les semaines suivantes sont décalées d’une semaine. À utiliser pour une maladie ou une blessure.'))return;
+    a.push(k); setCyclePauses(a);
+    toast('🤒 Pause enregistrée — cette semaine : '+cycleLabel(cycleInfo(getMon(0))));
+  }
+  renderWeek(); renderHeader(); try{renderDash();}catch(e){}
 }
 
 var NUT_DB=[
@@ -5876,6 +6192,25 @@ document.addEventListener('DOMContentLoaded',function(){
         if(ch)localStorage.setItem(mk,JSON.stringify(ms));
       }
       localStorage.setItem('sa_rest_fix','1');
+    }
+  }catch(e){}
+  // Migration v4.2 : semaine de maladie (octobre 2026) → pause de cycle.
+  // On retient, parmi les 4 semaines avant le 12/10, la plus récente avec au plus 1 séance validée.
+  try{
+    if(localStorage.getItem('sa_pause_mig')!=='1'){
+      if(!localStorage.getItem('sa_cycle_pauses')&&+getKey(0)>=20261012){
+        var pick=null;
+        ['20261005','20260928','20260921','20260914'].forEach(function(ck){
+          if(pick)return;
+          var ws=JSON.parse(localStorage.getItem(KEY_PREFIX+ck)||'null'), nv=0;
+          if(ws&&ws.days)ws.days.forEach(function(d){var w=WORKOUTS[d.type];if(w&&!w.isRest&&(d.done==='yes'||d.done==='mvw'))nv++;});
+          if(nv<=1)pick=ck;
+        });
+        pick=pick||'20261005';
+        setCyclePauses([pick]);
+        setTimeout(function(){toast('\ud83e\udd12 Semaine du '+pick.slice(6,8)+'/'+pick.slice(4,6)+' mise en pause \u2014 '+cycleLabel(cycleInfo(getMon(0))));},5400);
+      }
+      localStorage.setItem('sa_pause_mig','1');
     }
   }catch(e){}
   // Rappel export si >7j sans sauvegarde et données présentes
